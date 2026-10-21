@@ -1,13 +1,15 @@
 // Edit this file to add / rename projects.
-// Images live in projects/<id>/ — cover.jpg is the desktop icon,
+// Files live in projects/<id>/ — cover.jpg is the desktop icon,
 // `images` are shown in the window that opens on click.
+// `images` can mix photos (.jpg/.png) and videos (.mp4); each video needs a
+// poster with the same name ending in .jpg (e.g. 01.mp4 + 01.jpg).
 // x / y are optional starting positions in % of the screen (0–100);
 // leave them out and the icon is placed automatically around the centre.
 
 window.SITE = {
   name: "Your Name",
   about:
-    "Designer working across visual identity, art direction, motion and print. " +
+    "Designer working across visual identity, art direction, motion and AI-generated film. " +
     "Click a project to open it, drag icons around the desktop.",
   email: "hello@example.com",
   instagram: "https://instagram.com/",
@@ -16,67 +18,83 @@ window.SITE = {
 
 window.PROJECTS = [
   {
-    id: "project-1",
-    title: "Project 1",
+    id: "health-app",
+    title: "Health App",
     year: "2026",
-    tags: "Identity",
-    description: "Short description of the project.",
-    images: ["01.jpg", "02.jpg", "03.jpg"],
+    tags: "Motion · Product",
+    description:
+      "A series of product films for a health app, each one set on a real-life table scene: " +
+      "timelapse, nutrition, activity and sleep.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
   },
   {
-    id: "project-2",
-    title: "Project 2",
+    id: "dila",
+    title: "Dila",
     year: "2026",
-    tags: "Art direction",
-    description: "Short description of the project.",
-    images: ["01.jpg", "02.jpg"],
+    tags: "Campaign · Motion",
+    description:
+      "Visuals for Dila: the “We found you a better deal” app flow, an in-branch TV queue screen " +
+      "and a self-service kiosk placed in the mountains.",
+    images: ["01.mp4", "02.jpg", "03.mp4", "04.mp4"],
   },
   {
-    id: "project-3",
-    title: "Project 3",
-    year: "2025",
-    tags: "Motion",
-    description: "Short description of the project.",
-    images: ["01.jpg", "02.jpg"],
+    id: "chess-club",
+    title: "Chess Club",
+    year: "2026",
+    tags: "Product · AI visuals",
+    description:
+      "A foldable purple-and-white chess set: packshots, on-the-go scenes on trains and mountain tops, " +
+      "and short product films.",
+    images: ["01.jpg", "02.jpg", "03.mp4", "04.mp4", "05.jpg", "06.jpg", "07.mp4", "08.mp4", "09.jpg"],
   },
   {
-    id: "project-4",
-    title: "Project 4",
-    year: "2025",
-    tags: "Print",
-    description: "Short description of the project.",
-    images: ["01.jpg"],
+    id: "llama",
+    title: "Llama",
+    year: "2026",
+    tags: "AI film",
+    description: "A dreamlike AI short: a pastel llama wandering through clouds, mirrors and neon.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
   },
   {
-    id: "project-5",
-    title: "Project 5",
-    year: "2025",
-    tags: "Cover art",
-    description: "Short description of the project.",
-    images: ["01.jpg"],
+    id: "mavka",
+    title: "Mavka",
+    year: "2026",
+    tags: "AI film",
+    description: "Mavka, the forest spirit from Ukrainian folklore, reimagined as a glowing chrome figure.",
+    images: ["01.mp4", "02.mp4"],
   },
   {
-    id: "project-6",
-    title: "Project 6",
-    year: "2024",
-    tags: "Merch",
-    description: "Short description of the project.",
-    images: ["01.jpg"],
+    id: "character",
+    title: "Character & Merch",
+    year: "2026",
+    tags: "Character · Merch",
+    description:
+      "A horned character in an oversized hoodie with the arrow mark: turnaround sheet, " +
+      "a street film and the hoodie itself.",
+    images: ["01.jpg", "02.jpg", "03.mp4", "04.jpg", "05.jpg"],
   },
   {
-    id: "project-7",
-    title: "Project 7",
-    year: "2024",
-    tags: "Stage visuals",
-    description: "Short description of the project.",
-    images: ["01.jpg"],
+    id: "lookbook",
+    title: "Lookbook",
+    year: "2026",
+    tags: "Fashion · AI film",
+    description: "Streetwear lookbook films, from city corners and night streets to free-falling through the clouds.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4"],
   },
   {
-    id: "project-8",
-    title: "Project 8",
-    year: "2024",
-    tags: "Packaging",
-    description: "Short description of the project.",
-    images: ["01.jpg"],
+    id: "skate",
+    title: "Skate",
+    year: "2026",
+    tags: "3D animation",
+    description: "A stylised 3D skater rolling through the old-town streets.",
+    images: ["01.mp4"],
+  },
+  {
+    id: "experiments",
+    title: "Experiments",
+    year: "2026",
+    tags: "Motion · Illustration",
+    description: "Smaller motion pieces and experiments: kinetic type, illustrated loops, fisheye portraits and colour studies.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
   },
 ];

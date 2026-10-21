@@ -8,7 +8,7 @@ Desktop-style portfolio: draggable project icons over a blurred portrait, a menu
 assets/portrait.jpg            ← background photo of you
 projects/<project-id>/cover.jpg ← icon on the desktop
 projects/<project-id>/01.jpg    ← images shown in the project window
-projects/<project-id>/02.jpg
+projects/<project-id>/02.mp4    ← videos work too, next to a 02.jpg poster
 ```
 
 Then edit `projects.js`: set your name, email and Instagram, and give each project an `id` (same as its folder name), `title`, `year`, `tags`, `description` and the list of `images`.
