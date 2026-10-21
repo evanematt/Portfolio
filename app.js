@@ -62,7 +62,32 @@
     return img;
   }
 
-  const coverSources = (p) => [path(p, p.cover || "cover.jpg"), ...(p.images || []).slice(0, 1).map((f) => path(p, f))];
+  const isVideo = (f) => /\.(mp4|webm|mov)$/i.test(f);
+  const poster = (f) => f.replace(/\.[^.]+$/, ".jpg");
+
+  // Videos play muted while on screen and pause when scrolled away or hidden.
+  const videoObserver = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) e.target.play().catch(() => {});
+      else e.target.pause();
+    }
+  }, { threshold: 0.25 });
+
+  function video(p, file, i = 0) {
+    const v = document.createElement("video");
+    Object.assign(v, { muted: true, loop: true, playsInline: true, controls: true, preload: "none" });
+    v.setAttribute("muted", "");
+    v.setAttribute("playsinline", "");
+    v.poster = path(p, poster(file));
+    v.src = path(p, file);
+    v.onerror = () => v.replaceWith(placeholder(p, i));
+    videoObserver.observe(v);
+    return v;
+  }
+
+  const media = (p, file, i) => (isVideo(file) ? video(p, file, i) : image(p, [path(p, file)], i));
+
+  const coverSources = (p) => [path(p, p.cover || "cover.jpg"), ...(p.images || []).slice(0, 1).map((f) => path(p, isVideo(f) ? poster(f) : f))];
 
   // ---------- positions ----------
   let saved = {};
@@ -234,7 +259,7 @@
     const gallery = document.createElement("div");
     gallery.className = "gallery";
     const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
-    files.forEach((f, i) => gallery.appendChild(image(p, [path(p, f)], i)));
+    files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
     body.append(meta, h, d, gallery);
     createWindow("p:" + p.id, p.title, body);
   }
