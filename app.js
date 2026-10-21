@@ -1,7 +1,7 @@
 (() => {
   const SITE = window.SITE || {};
   const PROJECTS = window.PROJECTS || [];
-  const STORE_KEY = "desktop-positions-v2";
+  const STORE_KEY = "desktop-positions-v3";
   const PLACEHOLDER_COLORS = ["#f2603c", "#3fa7f5", "#9b5de5", "#f9b52b", "#2ec4b6", "#ef476f", "#118ab2", "#8d99ae"];
 
   const desktop = document.getElementById("desktop");
@@ -97,15 +97,15 @@
   // Lay folders out in a centred grid, like a finder window full of folders.
   function autoPosition(i, total) {
     if (isMobile()) {
-      const cols = 2;
+      const cols = 3;
       const r = Math.floor(i / cols), c = i % cols;
-      return { x: 27 + c * 46, y: 13 + r * 21 };
+      return { x: 18 + c * 32, y: 11 + r * 17 };
     }
     const cols = Math.min(4, total);
     const rows = Math.ceil(total / cols);
     const r = Math.floor(i / cols), c = i % cols;
     const inRow = Math.min(cols, total - r * cols);
-    return { x: 50 + (c - (inRow - 1) / 2) * 20, y: 46 + (r - (rows - 1) / 2) * 34 };
+    return { x: 50 + (c - (inRow - 1) / 2) * 13, y: 44 + (r - (rows - 1) / 2) * 21 };
   }
 
   function positionFor(p, i) {
