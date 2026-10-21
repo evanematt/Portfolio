@@ -19,3 +19,7 @@ Any missing image shows as a coloured placeholder, so the site works before ever
 ## Run locally
 
 Open `index.html` in a browser, or run `python3 -m http.server` and visit http://localhost:8000.
+
+## Character
+
+`character.js` walks a pixel character along the bottom of the screen after the cursor (walk when it's near, run when it's far, a random pose when she's standing still, a jump on click). Sprites live in `assets/character/` as single rows of 176×256 frames. It only runs on devices with a mouse or trackpad and is off when reduced motion is on.
