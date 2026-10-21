@@ -31,6 +31,9 @@
   const MENUBAR = 28;
   // jump.png: frames 0–1 crouch, 2–5 in the air, 6–7 landing
   const CROUCH = 0.12;             // seconds spent on the take-off and landing frames
+  // sit.png: 4 frames sitting on an edge, legs swinging; the seat is on row 144
+  const SEAT = 144;
+  const LEGS = (GROUND - SEAT) * SCALE;  // how far her feet hang below the edge she sits on
 
   const el = document.createElement("div");
   el.className = "buddy";
@@ -38,11 +41,11 @@
   el.style.width = FW * SCALE + "px";
   el.style.height = FH * SCALE + "px";
   document.body.appendChild(el);
-  // Tell app.js how much room to leave above new windows so she fits on top of them.
-  document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + TALL + 8 + "px");
+  // Tell app.js how much room to leave above new windows so she fits sitting on top of them.
+  document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit"]) new Image().src = DIR + f + ".png";
 
   const dock = document.getElementById("dock");
   const floorY = () => innerHeight;
@@ -50,12 +53,13 @@
   let x = innerWidth * 0.82, y = floorY();
   let target = x;
   let facing = "left";
-  let on = null;           // window she stands on, or null for the floor
+  let on = null;           // window she sits on, or null for the floor
   let relX = 0;            // her x relative to that window, so she rides along when it's dragged
   let hop = null;          // jump in progress
   let state = "";          // walk | run | idle
   let frame = 0, frameTime = 0;
   let pose = "stand", idleFor = 0, poseFor = 0;
+  let swing = 0, farFor = 0;   // sitting: leg-swing clock, and how long the cursor has been far away
   let last = performance.now();
 
   function show(sheet, i, frames) {
@@ -72,7 +76,7 @@
     if (s === "idle") { pose = "stand"; idleFor = 0; poseFor = 0; }
   }
 
-  // The front window, if there's room above it for her to stand.
+  // The front window, if there's room above it for her to sit.
   function frontWindow() {
     let best = null;
     for (const w of document.querySelectorAll(".window:not(.closing)")) {
@@ -80,7 +84,7 @@
     }
     if (!best) return null;
     const r = best.getBoundingClientRect();
-    return r.top - MENUBAR >= TALL * 0.85 && r.width > FW * SCALE ? best : null;
+    return r.top - MENUBAR >= SEAT * SCALE * 0.9 && r.width > FW * SCALE ? best : null;
   }
 
   // Where she can stand on the floor without being inside the dock.
@@ -119,8 +123,8 @@
 
   addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") target = e.clientX; }, { passive: true });
   document.documentElement.addEventListener("mouseleave", () => { target = x; });
-  // A click while she's standing makes her jump on the spot.
-  addEventListener("pointerdown", () => { if (state === "idle" && !hop) jump(x, y, on, Math.max(12, Math.min(70 * SCALE, y - TALL))); }, { passive: true });
+  // A click while she's standing on the floor makes her jump on the spot.
+  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on) jump(x, y, null, 70 * SCALE); }, { passive: true });
 
   function tickHop(dt) {
     hop.t += dt;
@@ -133,7 +137,7 @@
       // the window may still be animating open or being dragged: aim for where it is now
       const r = hop.to.getBoundingClientRect();
       hop.x1 = Math.min(r.right - HALF, Math.max(r.left + HALF, hop.x1));
-      hop.y1 = r.top;
+      hop.y1 = r.top + LEGS;
     }
     let i;
     if (hop.t < 0) {
@@ -143,13 +147,22 @@
       x = hop.x0 + (hop.x1 - hop.x0) * p;
       y = hop.y0 + (hop.y1 - hop.y0) * p - hop.bow * p * (1 - p);
       i = 2 + Math.min(3, Math.floor(p * 4));
+    } else if (hop.to) {
+      // straight from the air into sitting on the window's edge
+      x = hop.x1;
+      y = hop.y1;
+      on = hop.to;
+      relX = x - on.getBoundingClientRect().left;
+      hop = null;
+      swing = 0;
+      farFor = 0;
+      return sit(0);
     } else {
       x = hop.x1;
       y = hop.y1;
       i = hop.t < hop.T + CROUCH / 2 ? 6 : 7;
       if (hop.t >= hop.T + CROUCH) {
-        on = hop.to;
-        if (on) relX = x - on.getBoundingClientRect().left;
+        on = null;
         hop = null;
         setState("idle");
         return;
@@ -170,12 +183,15 @@
         if (want) {
           // up onto the window that just opened (or came to the front), keeping her head on screen
           const r = want.getBoundingClientRect();
-          jump(Math.min(r.right - HALF, Math.max(r.left + HALF, x)), r.top, want, Math.max(12, Math.min(70 * SCALE, r.top - TALL)));
+          const y1 = r.top + LEGS;
+          jump(Math.min(r.right - HALF, Math.max(r.left + HALF, target)), y1, want, Math.max(12, Math.min(70 * SCALE, y1 - TALL)));
         } else {
           // the window closed: drop to the floor, clear of the dock
           jump(clearOfDock(x), floorY(), null, 30 * SCALE);
         }
         tickHop(0);
+      } else if (on) {
+        sit(dt);
       } else {
         walk(dt);
       }
@@ -185,31 +201,39 @@
     requestAnimationFrame(tick);
   }
 
+  // Sitting on the window's top edge with her legs over the front, riding along if it's dragged.
+  // If the cursor stays far along the window for a moment, she hops over to sit near it.
+  function sit(dt) {
+    const r = on.getBoundingClientRect();
+    x = r.left + relX;
+    y = r.top + LEGS;
+    const goal = Math.min(r.right - HALF, Math.max(r.left + HALF, target));
+    farFor = Math.abs(goal - x) > 200 ? farFor + dt : 0;
+    if (farFor > 1.2) {
+      farFor = 0;
+      jump(goal, y, on, Math.max(8, Math.min(40 * SCALE, y - TALL)));
+      return tickHop(0);
+    }
+    // swing her legs for a couple of seconds, then rest a little
+    swing = (swing + dt) % 5;
+    show("sit", swing < 2 ? [0, 1, 2, 3][Math.floor(swing * 4) % 4] : 0, 4);
+  }
+
   function walk(dt) {
-    let lo = HALF, hi = innerWidth - HALF, goal;
-    if (on) {
-      const r = on.getBoundingClientRect();
-      x = r.left + relX;
-      y = r.top;
-      lo = r.left + HALF;
-      hi = r.right - HALF;
-      goal = Math.min(hi, Math.max(lo, target));
-    } else {
-      y = floorY();
-      goal = Math.min(hi, Math.max(lo, target));
-      const d = dockSpan();
-      const left = x <= (d.l + d.r) / 2;
-      const goalAcross = left ? goal > d.l : goal < d.r;
-      if (goalAcross) {
-        const edge = left ? d.l : d.r;
-        // past the dock: hop over it once she reaches its edge; over it: wait at the edge
-        if ((left ? goal >= d.r : goal <= d.l) && Math.abs(x - edge) < 2) {
-          jump(left ? d.r : d.l, y, null, y - d.top + 40 * SCALE);
-          tickHop(0);
-          return;
-        }
-        goal = edge;
+    y = floorY();
+    let goal = Math.min(innerWidth - HALF, Math.max(HALF, target));
+    const d = dockSpan();
+    const left = x <= (d.l + d.r) / 2;
+    const goalAcross = left ? goal > d.l : goal < d.r;
+    if (goalAcross) {
+      const edge = left ? d.l : d.r;
+      // past the dock: hop over it once she reaches its edge; over it: wait at the edge
+      if ((left ? goal >= d.r : goal <= d.l) && Math.abs(x - edge) < 2) {
+        jump(left ? d.r : d.l, y, null, y - d.top + 40 * SCALE);
+        tickHop(0);
+        return;
       }
+      goal = edge;
     }
 
     const dx = goal - x;
@@ -237,7 +261,6 @@
       }
       show("poses", POSES.indexOf(pose), POSES.length);
     }
-    if (on) relX = x - on.getBoundingClientRect().left;
   }
 
   requestAnimationFrame(tick);
