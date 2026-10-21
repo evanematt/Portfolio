@@ -6,7 +6,8 @@ Desktop-style portfolio: draggable project icons over a blurred portrait, a menu
 
 ```
 assets/portrait.jpg            ← background photo of you
-projects/<project-id>/cover.jpg ← icon on the desktop
+projects/<project-id>/folder.png ← folder icon on the desktop (transparent PNG)
+projects/<project-id>/cover.jpg ← square thumbnail, used if folder.png is missing
 projects/<project-id>/01.jpg    ← images shown in the project window
 projects/<project-id>/02.mp4    ← videos work too, next to a 02.jpg poster
 ```
