@@ -89,6 +89,23 @@
 
   const coverSources = (p) => [path(p, p.cover || "cover.jpg"), ...(p.images || []).slice(0, 1).map((f) => path(p, isVideo(f) ? poster(f) : f))];
 
+  // Small previews tucked behind the folder art; they slide out on hover.
+  function peeks(p) {
+    const box = document.createElement("div");
+    box.className = "peeks";
+    const n = Math.min(3, (p.images || []).length);
+    for (let i = 1; i <= n; i++) {
+      const img = document.createElement("img");
+      img.className = "peek";
+      img.alt = "";
+      img.draggable = false;
+      img.onerror = () => img.remove();
+      img.src = path(p, `peek-${i}.jpg`);
+      box.appendChild(img);
+    }
+    return box;
+  }
+
   // ---------- positions ----------
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { saved = {}; }
@@ -132,7 +149,7 @@
 
       const thumb = document.createElement("div");
       thumb.className = "folder";
-      thumb.appendChild(image(p, [path(p, p.folder || "folder.png"), ...coverSources(p)]));
+      thumb.append(peeks(p), Object.assign(image(p, [path(p, p.folder || "folder.png"), ...coverSources(p)]), { className: "art" }));
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = p.title;
