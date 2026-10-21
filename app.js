@@ -1,7 +1,7 @@
 (() => {
   const SITE = window.SITE || {};
   const PROJECTS = window.PROJECTS || [];
-  const STORE_KEY = "desktop-positions-v2";
+  const STORE_KEY = "desktop-positions-v3";
   const PLACEHOLDER_COLORS = ["#f2603c", "#3fa7f5", "#9b5de5", "#f9b52b", "#2ec4b6", "#ef476f", "#118ab2", "#8d99ae"];
 
   const desktop = document.getElementById("desktop");
@@ -94,18 +94,20 @@
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { saved = {}; }
   const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch {} };
 
-  // Lay folders out in a centred grid, like a finder window full of folders.
+  // Scatter around the centre (golden-angle spiral) like the reference.
   function autoPosition(i, total) {
     if (isMobile()) {
-      const cols = 2;
+      const cols = 4;
       const r = Math.floor(i / cols), c = i % cols;
-      return { x: 27 + c * 46, y: 13 + r * 21 };
+      return { x: 12.5 + c * 25, y: 9 + r * 14 };
     }
-    const cols = Math.min(4, total);
-    const rows = Math.ceil(total / cols);
-    const r = Math.floor(i / cols), c = i % cols;
-    const inRow = Math.min(cols, total - r * cols);
-    return { x: 50 + (c - (inRow - 1) / 2) * 20, y: 46 + (r - (rows - 1) / 2) * 34 };
+    const angle = i * 2.39996;
+    const radius = 0.18 + 0.82 * Math.sqrt((i + 0.5) / total);
+    const jitter = ((i * 37) % 11) / 11 - 0.5;
+    return {
+      x: 50 + Math.cos(angle) * radius * 36 + jitter * 3,
+      y: 46 + Math.sin(angle) * radius * 34 + jitter * 3,
+    };
   }
 
   function positionFor(p, i) {
