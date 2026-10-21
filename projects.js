@@ -19,27 +19,17 @@ window.SITE = {
 
 window.PROJECTS = [
   {
-    id: "health-app",
-    title: "Health App",
+    id: "mockups", lip: 27,
+    title: "Mockups",
     year: "2026",
-    tags: "Motion · Product",
+    tags: "Product · Motion",
     description:
-      "A series of product films for a health app, each one set on a real-life table scene: " +
-      "timelapse, nutrition, activity and sleep.",
-    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
+      "Product mockups and films: a health app shown on real-life table scenes (timelapse, nutrition, activity, sleep), " +
+      "and Dila's “We found you a better deal” flow, in-branch TV queue screen and a self-service kiosk in the mountains.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4", "06.jpg", "07.mp4", "08.mp4"],
   },
   {
-    id: "dila",
-    title: "Dila",
-    year: "2026",
-    tags: "Campaign · Motion",
-    description:
-      "Visuals for Dila: the “We found you a better deal” app flow, an in-branch TV queue screen " +
-      "and a self-service kiosk placed in the mountains.",
-    images: ["01.mp4", "02.jpg", "03.mp4", "04.mp4"],
-  },
-  {
-    id: "chess-club",
+    id: "chess-club", lip: 44,
     title: "Chess Club",
     year: "2026",
     tags: "Product · AI visuals",
@@ -49,7 +39,7 @@ window.PROJECTS = [
     images: ["01.jpg", "02.jpg", "03.mp4", "04.mp4", "05.jpg", "06.jpg", "07.mp4", "08.mp4", "09.jpg"],
   },
   {
-    id: "llama-mavka",
+    id: "llama-mavka", lip: 42,
     title: "Llama & Mavka",
     year: "2026",
     tags: "AI film",
@@ -59,7 +49,7 @@ window.PROJECTS = [
     images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4", "06.mp4"],
   },
   {
-    id: "character",
+    id: "character", lip: 26,
     title: "Character & Merch",
     year: "2026",
     tags: "Character · Merch",
@@ -69,7 +59,7 @@ window.PROJECTS = [
     images: ["01.jpg", "02.jpg", "03.mp4", "04.jpg", "05.jpg"],
   },
   {
-    id: "lookbook",
+    id: "lookbook", lip: 22,
     title: "Lookbook",
     year: "2026",
     tags: "Fashion · AI film",
@@ -77,19 +67,13 @@ window.PROJECTS = [
     images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4"],
   },
   {
-    id: "skate",
-    title: "Skate",
-    year: "2026",
-    tags: "3D animation",
-    description: "A stylised 3D skater rolling through the old-town streets.",
-    images: ["01.mp4"],
-  },
-  {
-    id: "experiments",
+    id: "experiments", lip: 38,
     title: "Experiments",
     year: "2026",
     tags: "Motion · Illustration",
-    description: "Smaller motion pieces and experiments: kinetic type, illustrated loops, fisheye portraits and colour studies.",
-    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
+    description:
+      "Smaller motion pieces and experiments: kinetic type, illustrated loops, fisheye portraits, colour studies " +
+      "and a stylised 3D skater rolling through the old-town streets.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4"],
   },
 ];

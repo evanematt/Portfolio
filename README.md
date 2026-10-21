@@ -12,7 +12,7 @@ projects/<project-id>/01.jpg    ← images shown in the project window
 projects/<project-id>/02.mp4    ← videos work too, next to a 02.jpg poster
 ```
 
-Then edit `projects.js`: set your name, email and Instagram, and give each project an `id` (same as its folder name), `title`, `year`, `tags`, `description` and the list of `images`.
+Then edit `projects.js`: set your name, email and Instagram, and give each project an `id` (same as its folder name), `title`, `year`, `tags`, `description` and the list of `images`. Optional `lip` is the height (in %, from the top of folder.png) of the folder's front panel edge; hover previews rise out from behind it.
 
 Any missing image shows as a coloured placeholder, so the site works before every file is in.
 
