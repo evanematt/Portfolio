@@ -94,18 +94,20 @@
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { saved = {}; }
   const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch {} };
 
-  // Lay folders out in a centred grid, like a finder window full of folders.
+  // Scatter around the centre (golden-angle spiral) like the reference.
   function autoPosition(i, total) {
     if (isMobile()) {
-      const cols = 3;
+      const cols = 4;
       const r = Math.floor(i / cols), c = i % cols;
-      return { x: 18 + c * 32, y: 11 + r * 17 };
+      return { x: 12.5 + c * 25, y: 9 + r * 14 };
     }
-    const cols = Math.min(4, total);
-    const rows = Math.ceil(total / cols);
-    const r = Math.floor(i / cols), c = i % cols;
-    const inRow = Math.min(cols, total - r * cols);
-    return { x: 50 + (c - (inRow - 1) / 2) * 13, y: 44 + (r - (rows - 1) / 2) * 21 };
+    const angle = i * 2.39996;
+    const radius = 0.18 + 0.82 * Math.sqrt((i + 0.5) / total);
+    const jitter = ((i * 37) % 11) / 11 - 0.5;
+    return {
+      x: 50 + Math.cos(angle) * radius * 36 + jitter * 3,
+      y: 46 + Math.sin(angle) * radius * 34 + jitter * 3,
+    };
   }
 
   function positionFor(p, i) {
