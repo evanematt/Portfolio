@@ -1,5 +1,6 @@
 // Edit this file to add / rename projects.
-// Files live in projects/<id>/ — cover.jpg is the desktop icon,
+// Files live in projects/<id>/ — folder.png is the desktop folder icon
+// (cover.jpg is used in the Projects window and as a fallback),
 // `images` are shown in the window that opens on click.
 // `images` can mix photos (.jpg/.png) and videos (.mp4); each video needs a
 // poster with the same name ending in .jpg (e.g. 01.mp4 + 01.jpg).
@@ -48,20 +49,14 @@ window.PROJECTS = [
     images: ["01.jpg", "02.jpg", "03.mp4", "04.mp4", "05.jpg", "06.jpg", "07.mp4", "08.mp4", "09.jpg"],
   },
   {
-    id: "llama",
-    title: "Llama",
+    id: "llama-mavka",
+    title: "Llama & Mavka",
     year: "2026",
     tags: "AI film",
-    description: "A dreamlike AI short: a pastel llama wandering through clouds, mirrors and neon.",
-    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4"],
-  },
-  {
-    id: "mavka",
-    title: "Mavka",
-    year: "2026",
-    tags: "AI film",
-    description: "Mavka, the forest spirit from Ukrainian folklore, reimagined as a glowing chrome figure.",
-    images: ["01.mp4", "02.mp4"],
+    description:
+      "Two AI shorts: a pastel llama wandering through clouds, mirrors and neon, and Mavka, " +
+      "the forest spirit from Ukrainian folklore, reimagined as a glowing chrome figure.",
+    images: ["01.mp4", "02.mp4", "03.mp4", "04.mp4", "05.mp4", "06.mp4"],
   },
   {
     id: "character",
