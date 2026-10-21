@@ -1,7 +1,7 @@
 (() => {
   const SITE = window.SITE || {};
   const PROJECTS = window.PROJECTS || [];
-  const STORE_KEY = "desktop-positions-v3";
+  const STORE_KEY = "desktop-positions-v4";
   const PLACEHOLDER_COLORS = ["#f2603c", "#3fa7f5", "#9b5de5", "#f9b52b", "#2ec4b6", "#ef476f", "#118ab2", "#8d99ae"];
 
   const desktop = document.getElementById("desktop");
@@ -89,7 +89,7 @@
 
   const coverSources = (p) => [path(p, p.cover || "cover.jpg"), ...(p.images || []).slice(0, 1).map((f) => path(p, isVideo(f) ? poster(f) : f))];
 
-  // Small previews tucked behind the folder art; they slide out on hover.
+  // Small previews tucked inside the folder; they rise out of it on hover.
   function peeks(p) {
     const box = document.createElement("div");
     box.className = "peeks";
@@ -149,7 +149,13 @@
 
       const thumb = document.createElement("div");
       thumb.className = "folder";
-      thumb.append(peeks(p), Object.assign(image(p, [path(p, p.folder || "folder.png"), ...coverSources(p)]), { className: "art" }));
+      // back of the folder, the previews, then a copy of the art clipped to the front panel,
+      // so the previews look like they come out of the folder rather than from behind it
+      const front = document.createElement("img");
+      Object.assign(front, { className: "front", alt: "", draggable: false, onerror: () => front.remove() });
+      front.src = path(p, p.folder || "folder.png");
+      if (p.lip != null) thumb.style.setProperty("--lip", p.lip + "%");
+      thumb.append(Object.assign(image(p, [path(p, p.folder || "folder.png"), ...coverSources(p)]), { className: "art" }), peeks(p), front);
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = p.title;
