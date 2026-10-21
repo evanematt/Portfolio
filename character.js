@@ -9,7 +9,8 @@
 
   const DIR = "assets/character/";
   const FW = 176, FH = 256, GROUND = 250;
-  const SCALE = 0.5;
+  // Full size on most laptop screens, a bit smaller on short ones.
+  const SCALE = innerHeight >= 760 ? 1 : 0.75;
   const ANIM = {
     walk: { frames: 8, fps: 9 },
     run: { frames: 4, fps: 10 },
@@ -22,9 +23,9 @@
   const IDLE_POSES = ["arms_crossed", "hands_on_hips", "wave", "hand_on_head", "shrug", "hand_on_hip", "peace"];
 
   const NEAR = 14;        // px from the cursor where she stops
-  const RUN_FROM = 320;   // px from the cursor where she starts running
-  const WALK_SPEED = 95;  // px per second
-  const RUN_SPEED = 290;
+  const RUN_FROM = 360;   // px from the cursor where she starts running
+  const WALK_SPEED = 130 * SCALE;  // px per second, roughly matching her stride
+  const RUN_SPEED = 400 * SCALE;
 
   const el = document.createElement("div");
   el.className = "buddy";
