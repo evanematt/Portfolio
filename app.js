@@ -237,7 +237,11 @@
     const width = w.offsetWidth;
     const offset = (cascade++ % 6) * 26;
     w.style.left = clamp((innerWidth - width) / 2 + offset - 60, 8, innerWidth - width - 8) + "px";
-    w.style.top = clamp(innerHeight * 0.1 + offset, 36, innerHeight - 160) + "px";
+    // leave room above the window for the walking character to stand on it (set by character.js)
+    const headroom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--buddy-headroom")) || 0;
+    const top = clamp(Math.max(innerHeight * 0.1, headroom) + offset, 36, innerHeight - 160);
+    w.style.top = top + "px";
+    if (headroom) w.style.maxHeight = `min(78vh, 760px, ${innerHeight - top - 16}px)`;
 
     w.addEventListener("pointerdown", () => { w.style.zIndex = ++z; });
     w.querySelector(".close").addEventListener("click", () => closeWindow(key));
