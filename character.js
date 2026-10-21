@@ -34,6 +34,9 @@
   // sit.png: 4 frames sitting on an edge, legs swinging; the seat is on row 144
   const SEAT = 144;
   const LEGS = (GROUND - SEAT) * SCALE;  // how far her feet hang below the edge she sits on
+  // fall.png: 0 startled in mid-air, 1 falling, 2 landed on her bottom, 3 getting up, 4–5 shaking her fist
+  const FALL = { freeze: 1.0, land: 0.7, up: 0.35, angry: 2.6, gravity: 2600 * SCALE };
+  const CURSES = ["#@!%", "&*!#", "%$#@!", "!!!"];
 
   const el = document.createElement("div");
   el.className = "buddy";
@@ -41,11 +44,15 @@
   el.style.width = FW * SCALE + "px";
   el.style.height = FH * SCALE + "px";
   document.body.appendChild(el);
+  const bubble = document.createElement("div");
+  bubble.className = "buddy-bubble";
+  bubble.setAttribute("aria-hidden", "true");
+  document.body.appendChild(bubble);
   // Tell app.js how much room to leave above new windows so she fits sitting on top of them.
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall"]) new Image().src = DIR + f + ".png";
 
   const dock = document.getElementById("dock");
   const floorY = () => innerHeight;
@@ -56,10 +63,11 @@
   let on = null;           // window she sits on, or null for the floor
   let relX = 0;            // her x relative to that window, so she rides along when it's dragged
   let hop = null;          // jump in progress
+  let fall = null;         // window closed under her: freeze, drop, land, get up, scold
   let state = "";          // walk | run | idle
   let frame = 0, frameTime = 0;
   let pose = "stand", idleFor = 0, poseFor = 0;
-  let swing = 0, farFor = 0;   // sitting: leg-swing clock, and how long the cursor has been far away
+  let swing = 0;           // sitting: leg-swing clock
   // sitting: when the window is dragged she tips the other way and wobbles back (a damped spring)
   let tilt = 0, tiltVel = 0, winVX = 0, lastLeft = null;
   let last = performance.now();
@@ -126,7 +134,47 @@
   addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") target = e.clientX; }, { passive: true });
   document.documentElement.addEventListener("mouseleave", () => { target = x; });
   // A click while she's standing on the floor makes her jump on the spot.
-  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on) jump(x, y, null, 70 * SCALE); }, { passive: true });
+  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on && !fall) jump(x, y, null, 70 * SCALE); }, { passive: true });
+
+  // Cartoon fall: she hangs in the air for a moment, drops, lands on her bottom,
+  // gets up and shakes her fist with a little speech bubble.
+  function tickFall(dt) {
+    fall.t += dt;
+    let i = 0;
+    if (fall.phase === "freeze") {
+      i = 0;
+      if (fall.t >= FALL.freeze) { fall.phase = "drop"; fall.t = 0; fall.vy = 0; fall.x0 = x; fall.y0 = y; }
+    } else if (fall.phase === "drop") {
+      i = 1;
+      fall.vy += FALL.gravity * dt;
+      y = Math.min(floorY(), y + fall.vy * dt);
+      // drift clear of the dock on the way down
+      const p = Math.min(1, (y - fall.y0) / Math.max(1, floorY() - fall.y0));
+      x = fall.x0 + (fall.x1 - fall.x0) * p;
+      if (y >= floorY()) { fall.phase = "land"; fall.t = 0; }
+    } else if (fall.phase === "land") {
+      i = 2;
+      if (fall.t >= FALL.land) { fall.phase = "up"; fall.t = 0; }
+    } else if (fall.phase === "up") {
+      i = 3;
+      if (fall.t >= FALL.up) { fall.phase = "angry"; fall.t = 0; }
+    } else {
+      i = 4 + (Math.floor(fall.t * 6) % 2);
+      if (Math.floor(fall.t * 1.5) !== fall.word) {
+        fall.word = Math.floor(fall.t * 1.5);
+        bubble.textContent = CURSES[fall.word % CURSES.length];
+      }
+      bubble.classList.add("show");
+      bubble.style.transform = `translate(${Math.round(x + HALF * 0.35)}px, ${Math.round(y - TALL + 6 * SCALE)}px)`;
+      if (fall.t >= FALL.angry) {
+        bubble.classList.remove("show");
+        fall = null;
+        setState("idle");
+        return;
+      }
+    }
+    show("fall", i, 6);
+  }
 
   function tickHop(dt) {
     hop.t += dt;
@@ -135,6 +183,7 @@
       hop.to = null;
       hop.x1 = clearOfDock(hop.x1);
       hop.y1 = floorY();
+      on = null;
     } else if (hop.to) {
       // the window may still be animating open or being dragged: aim for where it is now
       const r = hop.to.getBoundingClientRect();
@@ -157,7 +206,6 @@
       relX = x - on.getBoundingClientRect().left;
       hop = null;
       swing = 0;
-      farFor = 0;
       return sit(0);
     } else {
       x = hop.x1;
@@ -177,19 +225,24 @@
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
 
-    if (hop) {
+    if (fall) {
+      tickFall(dt);
+    } else if (hop) {
       tickHop(dt);
     } else {
-      const want = frontWindow();
-      if (want !== on) {
+      // once she's on a window she stays on it until it closes
+      const stillOpen = on && on.isConnected && !on.classList.contains("closing");
+      const want = stillOpen ? on : frontWindow();
+      if (on && !stillOpen) {
+        on = null;
+        fall = { phase: "freeze", t: 0, x1: clearOfDock(x) };
+        tickFall(0);
+      } else if (want !== on) {
         if (want) {
           // up onto the window that just opened (or came to the front), keeping her head on screen
           const r = want.getBoundingClientRect();
           const y1 = r.top + LEGS;
           jump(Math.min(r.right - HALF, Math.max(r.left + HALF, target)), y1, want, Math.max(12, Math.min(70 * SCALE, y1 - TALL)));
-        } else {
-          // the window closed: drop to the floor, clear of the dock
-          jump(clearOfDock(x), floorY(), null, 30 * SCALE);
         }
         tickHop(0);
       } else if (on) {
@@ -205,7 +258,6 @@
   }
 
   // Sitting on the window's top edge with her legs over the front, riding along if it's dragged.
-  // If the cursor stays far along the window for a moment, she hops over to sit near it.
   function sit(dt) {
     const r = on.getBoundingClientRect();
     x = r.left + relX;
@@ -223,13 +275,6 @@
       swing = (swing + dt * 3) % 2;
       show("sit", [0, 1, 2, 3][Math.floor(swing * 4) % 4], 4);
       return;
-    }
-    const goal = Math.min(r.right - HALF, Math.max(r.left + HALF, target));
-    farFor = Math.abs(goal - x) > 200 ? farFor + dt : 0;
-    if (farFor > 1.2) {
-      farFor = 0;
-      jump(goal, y, on, Math.max(8, Math.min(40 * SCALE, y - TALL)));
-      return tickHop(0);
     }
     // swing her legs for a couple of seconds, then rest a little
     swing = (swing + dt) % 5;
