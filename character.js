@@ -60,6 +60,8 @@
   let frame = 0, frameTime = 0;
   let pose = "stand", idleFor = 0, poseFor = 0;
   let swing = 0, farFor = 0;   // sitting: leg-swing clock, and how long the cursor has been far away
+  // sitting: when the window is dragged she tips the other way and wobbles back (a damped spring)
+  let tilt = 0, tiltVel = 0, winVX = 0, lastLeft = null;
   let last = performance.now();
 
   function show(sheet, i, frames) {
@@ -197,7 +199,8 @@
       }
     }
 
-    el.style.transform = `translate(${Math.round(x - HALF)}px, ${Math.round(y - TALL)}px)`;
+    if (!on || hop) { tilt = 0; tiltVel = 0; lastLeft = null; }
+    el.style.transform = `translate(${Math.round(x - HALF)}px, ${Math.round(y - TALL)}px)` + (tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
     requestAnimationFrame(tick);
   }
 
@@ -207,6 +210,20 @@
     const r = on.getBoundingClientRect();
     x = r.left + relX;
     y = r.top + LEGS;
+    // how fast the window is moving sideways, smoothed
+    if (lastLeft !== null && dt > 0) winVX += ((r.left - lastLeft) / dt - winVX) * Math.min(1, dt * 12);
+    lastLeft = r.left;
+    // lean against the motion, then spring back with a wobble
+    const lean = Math.max(-28, Math.min(28, -winVX * 0.03));
+    tiltVel += ((lean - tilt) * 90 - tiltVel * 7) * dt;
+    tilt += tiltVel * dt;
+    if (Math.abs(tilt) < 0.05 && Math.abs(tiltVel) < 0.05) tilt = tiltVel = 0;
+    if (Math.abs(winVX) > 60 || Math.abs(tilt) > 4) {
+      // losing her balance: legs kick fast
+      swing = (swing + dt * 3) % 2;
+      show("sit", [0, 1, 2, 3][Math.floor(swing * 4) % 4], 4);
+      return;
+    }
     const goal = Math.min(r.right - HALF, Math.max(r.left + HALF, target));
     farFor = Math.abs(goal - x) > 200 ? farFor + dt : 0;
     if (farFor > 1.2) {

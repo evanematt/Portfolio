@@ -311,4 +311,6 @@ a { color: inherit; text-decoration: none; }
   background-repeat: no-repeat;
   image-rendering: pixelated;
   will-change: transform;
+  /* she tips around the point she sits on (row 144 of 256) */
+  transform-origin: 50% 56.25%;
 }
