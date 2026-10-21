@@ -37,6 +37,11 @@
   // fall.png: 0 startled in mid-air, 1 falling, 2 landed on her bottom, 3 getting up, 4–5 shaking her fist
   const FALL = { freeze: 1.0, land: 0.7, up: 0.35, angry: 2.6, gravity: 2600 * SCALE };
   const CURSES = ["#@!%", "&*!#", "%$#@!", "!!!"];
+  // On the Character & Merch window she puts on its hoodie. hoodie_on.png: 5 frames (holds it up, arms in,
+  // over her head, head out, tugs it down), seconds on each;
+  // sit_hoodie.png is sit.png in the hoodie. It stays with the window: she falls off in her t-shirt.
+  const MERCH = "p:character";
+  const DRESS = [0.8, 0.5, 0.6, 0.6, 0.7];
 
   const el = document.createElement("div");
   el.className = "buddy";
@@ -52,7 +57,7 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie"]) new Image().src = DIR + f + ".png";
 
   const dock = document.getElementById("dock");
   const floorY = () => innerHeight;
@@ -68,6 +73,7 @@
   let frame = 0, frameTime = 0;
   let pose = "stand", idleFor = 0, poseFor = 0;
   let swing = 0;           // sitting: leg-swing clock
+  let dress = null;        // on the merch window: seconds into putting on the hoodie, then "done"
   // sitting: when the window is dragged she tips the other way and wobbles back (a damped spring)
   let tilt = 0, tiltVel = 0, winVX = 0, lastLeft = null;
   let last = performance.now();
@@ -206,6 +212,7 @@
       relX = x - on.getBoundingClientRect().left;
       hop = null;
       swing = 0;
+      dress = on.dataset.key === MERCH ? -0.4 : null;
       return sit(0);
     } else {
       x = hop.x1;
@@ -235,6 +242,7 @@
       const want = stillOpen ? on : frontWindow();
       if (on && !stillOpen) {
         on = null;
+        dress = null;
         fall = { phase: "freeze", t: 0, x1: clearOfDock(x) };
         tickFall(0);
       } else if (want !== on) {
@@ -270,15 +278,26 @@
     tiltVel += ((lean - tilt) * 90 - tiltVel * 7) * dt;
     tilt += tiltVel * dt;
     if (Math.abs(tilt) < 0.05 && Math.abs(tiltVel) < 0.05) tilt = tiltVel = 0;
+    if (typeof dress === "number") {
+      // pulling the hoodie on, a beat after landing
+      dress += dt;
+      if (dress >= 0) {
+        let t = dress, i = 0;
+        while (i < DRESS.length - 1 && t >= DRESS[i]) t -= DRESS[i++];
+        if (i === DRESS.length - 1 && t >= DRESS[i]) { dress = "done"; swing = 0; }
+        else return show("hoodie_on", i, DRESS.length);
+      }
+    }
+    const sheet = dress === "done" ? "sit_hoodie" : "sit";
     if (Math.abs(winVX) > 60 || Math.abs(tilt) > 4) {
       // losing her balance: legs kick fast
       swing = (swing + dt * 3) % 2;
-      show("sit", [0, 1, 2, 3][Math.floor(swing * 4) % 4], 4);
+      show(sheet, [0, 1, 2, 3][Math.floor(swing * 4) % 4], 4);
       return;
     }
     // swing her legs for a couple of seconds, then rest a little
     swing = (swing + dt) % 5;
-    show("sit", swing < 2 ? [0, 1, 2, 3][Math.floor(swing * 4) % 4] : 0, 4);
+    show(sheet, swing < 2 ? [0, 1, 2, 3][Math.floor(swing * 4) % 4] : 0, 4);
   }
 
   function walk(dt) {

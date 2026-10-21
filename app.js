@@ -217,6 +217,7 @@
     }
     const w = document.createElement("section");
     w.className = "window" + (small ? " small" : "");
+    w.dataset.key = key;
     w.setAttribute("role", "dialog");
     w.setAttribute("aria-label", title);
     w.style.zIndex = ++z;
