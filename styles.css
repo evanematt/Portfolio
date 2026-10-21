@@ -314,3 +314,35 @@ a { color: inherit; text-decoration: none; }
   /* she tips around the point she sits on (row 144 of 256) */
   transform-origin: 50% 56.25%;
 }
+/* her angry speech bubble after a fall */
+.buddy-bubble {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 4001;
+  pointer-events: none;
+  padding: 4px 8px 5px;
+  font: 700 15px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: .04em;
+  color: #c0392b;
+  background: #fff;
+  border: 3px solid #111;
+  box-shadow: 3px 3px 0 #111;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.buddy-bubble.show { opacity: 1; }
+/* pixel tail pointing down-left to her head */
+.buddy-bubble::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  bottom: -9px;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border: 3px solid #111;
+  border-top: 0;
+  border-right: 0;
+  transform: skewY(-35deg);
+}
