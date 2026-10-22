@@ -111,5 +111,5 @@ window.PROJECTS = [
 
 // Extra desktop icons that aren't projects: a YouTube video that opens in a small player window.
 window.EXTRAS = [
-  { id: "adhd", title: "for ADHD", youtube: "rk84ndVMwbY" },
+  { id: "adhd", title: "for ADHD", youtube: "rk84ndVMwbY", icon: "assets/adhd-icon.jpg" },
 ];
