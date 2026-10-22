@@ -9,7 +9,7 @@
 // leave them out and the icon is placed automatically around the centre.
 
 window.SITE = {
-  name: "Your Name",
+  name: "eva nemat",
   about:
     "Designer working across visual identity, art direction, motion and AI-generated film. " +
     "Click a project to open it, drag icons around the desktop.",
