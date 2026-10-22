@@ -324,6 +324,19 @@ a { color: inherit; text-decoration: none; }
   image-rendering: pixelated;
   will-change: transform;
 }
+/* the llama and bird from Llama & Mavka that run across and fall asleep on the right */
+.buddy-llama, .buddy-bird {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 3994;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  will-change: transform;
+}
+.buddy-llama { top: auto; transform-origin: 50% 100%; }
+.buddy-bird { z-index: 3995; }
 /* her angry speech bubble after a fall */
 .buddy-bubble {
   position: fixed;

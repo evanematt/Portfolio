@@ -47,6 +47,14 @@
   // desk.png: 4 frames of 184×212, floor on row 208, desk's left edge at x 8: 0 empty, 1–3 her at the PC.
   // pull_left.png: 4 frames facing left, hands reaching to x 10, feet on row 250.
   const MOCKUPS = "p:mockups";
+  // When Llama & Mavka opens, its llama gallops across the bottom chasing its bird, lies down on the right
+  // and falls asleep with the bird perched on its back; the pair stays there (remembered in localStorage).
+  // llama_run.png: 6 frames of 220×200; llama_sleep.png: 0 standing, 1 kneeling, 2 resting, 3 curled up asleep,
+  // drawn from x 6; feet on row 196 in both. bird.png: 6 frames of 80×64: 0–3 flying, 4 perched, 5 dozing,
+  // perched feet on row 61. Asleep, the llama's back is on row 130 around x 60.
+  const LLAMA_KEY = "p:llama-mavka";
+  const LLAMA = { w: 220, h: 200, floor: 196, body: 141, right: 24, speed: 380, settle: [0.6, 0.5, 0.8], backY: 130, backX: 60 };
+  const BIRD = { w: 80, h: 64, feet: 61, land: 1.4 };
   const DESK = { w: 184, h: 212, floor: 208, grip: 176, hands: 10, chair: 130, left: 4, pull: 2.4, work: 5 };
 
   const el = document.createElement("div");
@@ -63,7 +71,7 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird"]) new Image().src = DIR + f + ".png";
 
   const desk = document.createElement("div");
   desk.className = "buddy-desk";
@@ -81,6 +89,83 @@
     if (!desk.isConnected) document.body.insertBefore(desk, el);
   }
   try { if (localStorage.getItem("buddy-desk")) placeDesk(DESK.left); } catch (e) { /* storage blocked */ }
+
+  function sprite(cls, w, h) {
+    const d = document.createElement("div");
+    d.className = cls;
+    d.setAttribute("aria-hidden", "true");
+    d.style.width = w * SCALE + "px";
+    d.style.height = h * SCALE + "px";
+    return d;
+  }
+  const llama = sprite("buddy-llama", LLAMA.w, LLAMA.h);
+  llama.style.bottom = -(LLAMA.h - LLAMA.floor) * SCALE + "px";
+  const bird = sprite("buddy-bird", BIRD.w, BIRD.h);
+  function frameOf(node, sheet, i, frames, w, h) {
+    node.style.backgroundImage = `url(${DIR}${sheet}.png)`;
+    node.style.backgroundSize = `${w * SCALE * frames}px ${h * SCALE}px`;
+    node.style.backgroundPosition = `${-i * w * SCALE}px 0`;
+  }
+  // phase: run → settle → asleep; null until Llama & Mavka first opens
+  let scene = null;
+  let llamaWin = null;
+  try { if (localStorage.getItem("buddy-llama")) scene = { phase: "asleep", t: 0, bt: 0 }; } catch (e) { /* storage blocked */ }
+
+  function tickScene(dt) {
+    const w = document.querySelector(`.window[data-key="${LLAMA_KEY}"]:not(.closing)`);
+    if (w !== llamaWin) {
+      llamaWin = w;
+      if (w && !scene) scene = { phase: "run", t: 0, lx: -LLAMA.w * SCALE };
+    }
+    if (!scene) return;
+    if (!llama.isConnected) document.body.insertBefore(llama, el), document.body.insertBefore(bird, el);
+    scene.t += dt;
+    const restX = innerWidth - LLAMA.right - LLAMA.body * SCALE;
+    const groundY = innerHeight;
+    // where the bird sits on the sleeping llama's back
+    const perchX = restX + (LLAMA.backX - BIRD.w / 2) * SCALE;
+    const perchY = groundY - (LLAMA.floor - LLAMA.backY + BIRD.feet) * SCALE;
+    let bx, by, bi, flip = false, breathe = 1;
+    if (scene.phase === "run") {
+      // gallop in from the left, the bird flapping just ahead of its nose
+      scene.lx = Math.min(restX, scene.lx + LLAMA.speed * SCALE * dt);
+      llama.style.transform = `translateX(${Math.round(scene.lx)}px)`;
+      frameOf(llama, "llama_run", Math.floor(scene.t * 12) % 6, 6, LLAMA.w, LLAMA.h);
+      bx = Math.min(innerWidth - BIRD.w * SCALE, scene.lx + (LLAMA.w + 20 + 18 * Math.sin(scene.t * 2.5)) * SCALE);
+      by = groundY - (180 - 16 * Math.sin(scene.t * 6)) * SCALE;
+      bi = Math.floor(scene.t * 10) % 4;
+      if (scene.lx >= restX) { scene.phase = "settle"; scene.t = 0; }
+    } else if (scene.phase === "settle") {
+      // stop, kneel, rest, curl up; the bird circles back and lands on her back
+      const [a, b, c] = LLAMA.settle;
+      const i = scene.t < a ? 0 : scene.t < a + b ? 1 : scene.t < a + b + c ? 2 : 3;
+      llama.style.transform = `translateX(${Math.round(restX)}px)`;
+      frameOf(llama, "llama_sleep", i, 4, LLAMA.w, LLAMA.h);
+      if (!scene.from) scene.from = { x: Math.min(innerWidth - BIRD.w * SCALE, restX + (LLAMA.w + 20) * SCALE), y: groundY - 180 * SCALE };
+      const p = Math.min(1, scene.t / (a + b + c + BIRD.land));
+      const e = p * p * (3 - 2 * p);
+      // a loop up and back to the left before dropping onto the back
+      bx = scene.from.x + (perchX - scene.from.x) * e;
+      by = scene.from.y + (perchY - scene.from.y) * e - Math.sin(p * Math.PI) * 90 * SCALE;
+      flip = true;
+      bi = p < 1 ? Math.floor(scene.t * 10) % 4 : 4;
+      if (p >= 1 && i === 3) {
+        scene = { phase: "asleep", t: 0, bt: 0 };
+        try { localStorage.setItem("buddy-llama", "1"); } catch (err) { /* storage blocked */ }
+      }
+    }
+    if (scene.phase === "asleep") {
+      // slow breathing; the bird dozes off now and then
+      breathe = 1 + 0.025 * (1 + Math.sin(scene.t * 1.8)) / 2;
+      llama.style.transform = `translateX(${Math.round(restX)}px) scaleY(${breathe.toFixed(4)})`;
+      frameOf(llama, "llama_sleep", 3, 4, LLAMA.w, LLAMA.h);
+      bx = perchX;
+      by = perchY - (breathe - 1) * (LLAMA.floor - LLAMA.backY) * SCALE;
+      bi = scene.t % 10 > 6 ? 5 : 4;
+    }
+    bird.style.transform = `translate(${Math.round(bx)}px, ${Math.round(by)}px)` + (flip ? " scaleX(-1)" : "");
+    frameOf(bird, "bird", bi, 6, BIRD.w, BIRD.h);
+  }
 
   const dock = document.getElementById("dock");
   const floorY = () => innerHeight;
@@ -256,6 +341,7 @@
   function tick(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    tickScene(dt);
 
     if (fall) {
       tickFall(dt);
