@@ -339,6 +339,55 @@ a { color: inherit; text-decoration: none; }
 }
 .buddy-llama { top: auto; transform-origin: 50% 100%; }
 .buddy-bird { z-index: 3995; }
+/* questions about the project she's sitting on, and her answer */
+.buddy-qa {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 7001;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+  font: 600 12px/1.35 ui-monospace, "SF Mono", Menlo, monospace;
+}
+.buddy-qa.flip { align-items: flex-end; }
+.buddy-qa.show { opacity: 1; }
+.buddy-qa.show button { pointer-events: auto; }
+.buddy-qa button, .buddy-qa .say {
+  margin: 0;
+  padding: 5px 9px 6px;
+  font: inherit;
+  text-align: left;
+  color: #111;
+  background: #fff;
+  border: 3px solid #111;
+  box-shadow: 3px 3px 0 #111;
+}
+.buddy-qa button { cursor: pointer; transition: transform .08s, box-shadow .08s; }
+.buddy-qa button:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #111; background: #fff3a6; }
+.buddy-qa button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #111; }
+.buddy-qa .say { font-weight: 500; width: 100%; box-sizing: border-box; min-height: 1.35em; }
+/* pixel tail pointing back at her */
+.buddy-qa .say { position: relative; }
+.buddy-qa .say::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: -9px;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border: 3px solid #111;
+  border-top: 0;
+  border-right: 0;
+  transform: skewX(-35deg);
+}
+.buddy-qa.flip .say::before { left: auto; right: -9px; border-left: 0; border-right: 3px solid #111; transform: skewX(35deg); }
 /* her angry speech bubble after a fall */
 .buddy-bubble {
   position: fixed;

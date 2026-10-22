@@ -2,6 +2,7 @@
 // Files live in projects/<id>/ — folder.png is the desktop folder icon
 // (cover.jpg is used in the Projects window and as a fallback),
 // `images` are shown in the window that opens on click.
+// `qa` (optional): questions shown beside the character while she sits on the window, with her answers.
 // `images` can mix photos (.jpg/.png) and videos (.mp4); each video needs a
 // poster with the same name ending in .jpg (e.g. 01.mp4 + 01.jpg).
 // x / y are optional starting positions in % of the screen (0–100);
@@ -37,6 +38,11 @@ window.PROJECTS = [
       "A foldable purple-and-white chess set: packshots, on-the-go scenes on trains and mountain tops, " +
       "and short product films.",
     images: ["01.jpg", "02.jpg", "03.mp4", "04.mp4", "05.jpg", "06.jpg", "07.mp4", "08.mp4", "09.jpg"],
+    qa: [
+      { q: "What tools did you use?", a: "All of it was made in Higgsfield, with Nano Banana Pro, Cinematic Studio and Seedream 2." },
+      { q: "Where did the idea come from?", a: "Some good friends of mine started their own chess club in Lviv, and their idea of a compact, foldable chess set was too good not to show off." },
+      { q: "What was the hardest part?", a: "Keeping the shape of every chess piece true from shot to shot, so a knight still looks like a knight in every frame." },
+    ],
   },
   {
     id: "llama-mavka", lip: 42,

@@ -88,6 +88,15 @@
   bubble.className = "buddy-bubble";
   bubble.setAttribute("aria-hidden", "true");
   document.body.appendChild(bubble);
+  // While she sits on a project window, three questions about it (PROJECTS[].qa in projects.js) wait beside her;
+  // pick one and she answers it in a speech bubble.
+  const qa = document.createElement("div");
+  qa.className = "buddy-qa";
+  document.body.appendChild(qa);
+  let qaWin = null;        // the window the questions are for
+  let qaAsk = null;        // { a: answer, n: characters shown so far }
+  let qaWait = 0;          // seconds sat still before the questions show
+
   // Tell app.js how much room to leave above new windows so she fits sitting on top of them.
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
@@ -490,12 +499,69 @@
     }
 
     if (!on || hop) { tilt = 0; tiltVel = 0; lastLeft = null; unsquash(); }
+    tickQA(dt);
     // windows cover her, except the one she is sitting on or has just cleared the top of
     el.style.zIndex = on || (hop && hop.to && y <= hop.to.getBoundingClientRect().top + 4) ? "7000" : "";
     const shake = cross ? Math.sin(cross * 70) * 1.5 * SCALE : 0;
     el.style.transform = `translate(${Math.round(x - HALF + shake)}px, ${Math.round(y - TALL)}px)` + (tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "") +
       (squash < 1 ? ` scale(${(1 + (1 - squash) * 0.5).toFixed(3)}, ${squash.toFixed(3)})` : "");
     requestAnimationFrame(tick);
+  }
+
+  function projectOf(w) {
+    const id = (w.dataset.key || "").replace(/^p:/, "");
+    return (window.PROJECTS || []).find((p) => p.id === id && p.qa && p.qa.length);
+  }
+
+  function renderQA(project) {
+    qa.textContent = "";
+    if (qaAsk) {
+      const say = document.createElement("p");
+      say.className = "say";
+      say.textContent = qaAsk.a.slice(0, Math.floor(qaAsk.n));
+      qa.appendChild(say);
+    }
+    for (const item of project.qa) {
+      if (qaAsk && item.a === qaAsk.a) continue;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = item.q;
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        qaAsk = { a: item.a, n: 0 };
+        renderQA(project);
+      });
+      qa.appendChild(b);
+    }
+  }
+
+  function tickQA(dt) {
+    const project = on && !hop && squash === 1 && typeof dress !== "number" ? projectOf(on) : null;
+    if (!project) {
+      if (qaWin) { qa.classList.remove("show"); qaWin = null; qaAsk = null; }
+      qaWait = 0;
+      return;
+    }
+    if (qaWin !== on) {
+      qaWin = on;
+      qaAsk = null;
+      qaWait = 0;
+      renderQA(project);
+    }
+    qaWait += dt;
+    if (qaWait < 0.8) return;
+    qa.classList.add("show");
+    // type the answer out
+    if (qaAsk && qaAsk.n < qaAsk.a.length) {
+      qaAsk.n = Math.min(qaAsk.a.length, qaAsk.n + dt * 45);
+      qa.querySelector(".say").textContent = qaAsk.a.slice(0, Math.floor(qaAsk.n));
+    }
+    // beside her head, on whichever side has room, riding along with the window
+    const r = on.getBoundingClientRect();
+    const right = x + HALF * 0.6 + qa.offsetWidth + 8 < innerWidth;
+    const left = right ? x + HALF * 0.6 : x - HALF * 0.6 - qa.offsetWidth;
+    qa.classList.toggle("flip", !right);
+    qa.style.transform = `translate(${Math.round(left)}px, ${Math.round(r.top - (SEAT - 20) * SCALE)}px)`;
   }
 
   function unsquash() {
