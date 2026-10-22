@@ -42,6 +42,12 @@
   // sit_hoodie.png is sit.png in the hoodie. It stays with the window: she falls off in her t-shirt.
   const MERCH = "p:character";
   const DRESS = [0.8, 0.5, 0.6, 0.6, 0.7];
+  // When the Mockups window opens she runs to the bottom-left corner, pulls a desk in from off screen
+  // and sits at it for a while; the desk stays (remembered in localStorage).
+  // desk.png: 4 frames of 184×212, floor on row 208, desk's left edge at x 8: 0 empty, 1–3 her at the PC.
+  // pull_left.png: 4 frames facing left, hands reaching to x 10, feet on row 250.
+  const MOCKUPS = "p:mockups";
+  const DESK = { w: 184, h: 212, floor: 208, grip: 176, hands: 10, chair: 130, left: 4, pull: 2.4, work: 5 };
 
   const el = document.createElement("div");
   el.className = "buddy";
@@ -57,7 +63,24 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left"]) new Image().src = DIR + f + ".png";
+
+  const desk = document.createElement("div");
+  desk.className = "buddy-desk";
+  desk.setAttribute("aria-hidden", "true");
+  desk.style.width = DESK.w * SCALE + "px";
+  desk.style.height = DESK.h * SCALE + "px";
+  desk.style.bottom = -(DESK.h - DESK.floor) * SCALE + "px";
+  desk.style.backgroundImage = `url(${DIR}desk.png)`;
+  desk.style.backgroundSize = `${DESK.w * SCALE * 4}px ${DESK.h * SCALE}px`;
+  let deskLeft = null;     // x of the desk frame's left edge, null while there's no desk
+  function placeDesk(left, i = 0) {
+    deskLeft = left;
+    desk.style.transform = `translateX(${Math.round(left)}px)`;
+    desk.style.backgroundPosition = `${-i * DESK.w * SCALE}px 0`;
+    if (!desk.isConnected) document.body.insertBefore(desk, el);
+  }
+  try { if (localStorage.getItem("buddy-desk")) placeDesk(DESK.left); } catch (e) { /* storage blocked */ }
 
   const dock = document.getElementById("dock");
   const floorY = () => innerHeight;
@@ -74,6 +97,8 @@
   let pose = "stand", idleFor = 0, poseFor = 0;
   let swing = 0;           // sitting: leg-swing clock
   let dress = null;        // on the merch window: seconds into putting on the hoodie, then "done"
+  let task = null;         // Mockups opened: { phase: go | pull | work, t }
+  let mockups = null;      // the Mockups window we last reacted to
   // sitting: when the window is dragged she tips the other way and wobbles back (a damped spring)
   let tilt = 0, tiltVel = 0, winVX = 0, lastLeft = null;
   let last = performance.now();
@@ -140,7 +165,7 @@
   addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") target = e.clientX; }, { passive: true });
   document.documentElement.addEventListener("mouseleave", () => { target = x; });
   // A click while she's standing on the floor makes her jump on the spot.
-  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on && !fall) jump(x, y, null, 70 * SCALE); }, { passive: true });
+  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on && !fall && !task) jump(x, y, null, 70 * SCALE); }, { passive: true });
 
   // Cartoon fall: she hangs in the air for a moment, drops, lands on her bottom,
   // gets up and shakes her fist with a little speech bubble.
@@ -236,6 +261,10 @@
       tickFall(dt);
     } else if (hop) {
       tickHop(dt);
+    } else if (startTask()) {
+      tickHop(0);
+    } else if (task) {
+      tickTask(dt);
     } else {
       // once she's on a window she stays on it until it closes
       const stillOpen = on && on.isConnected && !on.classList.contains("closing");
@@ -300,9 +329,65 @@
     show(sheet, swing < 2 ? [0, 1, 2, 3][Math.floor(swing * 4) % 4] : 0, 4);
   }
 
-  function walk(dt) {
+  // A Mockups window that just opened starts the desk errand; if she's sitting on a window she hops down first.
+  function startTask() {
+    const w = document.querySelector(`.window[data-key="${MOCKUPS}"]:not(.closing)`);
+    if (w === mockups) return false;
+    mockups = w;
+    if (!w || task) return false;
+    task = { phase: "go", t: 0 };
+    if (on) {
+      on = null;
+      dress = null;
+      jump(clearOfDock(x), floorY(), null, 40 * SCALE);
+      return true;
+    }
+    return false;
+  }
+
+  function tickTask(dt) {
+    task.t += dt;
+    const chairX = DESK.left + DESK.chair * SCALE;
+    if (task.phase === "go") {
+      // run to the corner, or straight to the chair if the desk is already there
+      const goal = deskLeft === null ? HALF : chairX;
+      if (hop) return tickHop(dt);
+      walk(dt, goal);
+      if (hop || state !== "idle") return;
+      task = deskLeft === null ? { phase: "pull", t: 0, from: x - HALF + (DESK.hands - DESK.grip) * SCALE } : { phase: "work", t: 0 };
+      if (task.phase === "pull") placeDesk(task.from);
+    }
+    if (task.phase === "pull") {
+      // walk backwards dragging the desk in by the back of its chair
+      const p = Math.min(1, task.t / DESK.pull);
+      const e = p * p * (3 - 2 * p);
+      placeDesk(task.from + (DESK.left - task.from) * e);
+      x = deskLeft + (DESK.grip - DESK.hands) * SCALE + HALF;
+      y = floorY();
+      facing = "left";
+      show("pull_left", Math.floor(task.t * 6) % 4, 4);
+      if (p >= 1) {
+        try { localStorage.setItem("buddy-desk", "1"); } catch (err) { /* storage blocked */ }
+        task = { phase: "work", t: 0 };
+      } else return;
+    }
+    // at the PC: she's drawn into the desk sprite, clicking and typing
+    el.style.visibility = "hidden";
+    placeDesk(DESK.left, [1, 2, 1, 3][Math.floor(task.t * 2.5) % 4]);
+    if (task.t >= DESK.work) {
+      placeDesk(DESK.left, 0);
+      el.style.visibility = "";
+      x = chairX;
+      y = floorY();
+      facing = "right";
+      task = null;
+      setState("idle");
+    }
+  }
+
+  function walk(dt, to = target) {
     y = floorY();
-    let goal = Math.min(innerWidth - HALF, Math.max(HALF, target));
+    let goal = Math.min(innerWidth - HALF, Math.max(HALF, to));
     const d = dockSpan();
     const left = x <= (d.l + d.r) / 2;
     const goalAcross = left ? goal > d.l : goal < d.r;
@@ -319,8 +404,9 @@
 
     const dx = goal - x;
     const dist = Math.abs(dx);
-    if (dist <= NEAR && !(goal !== target && dist > 1)) setState("idle");
-    else setState(dist > RUN_FROM || (state === "run" && dist > RUN_FROM / 3) ? "run" : "walk");
+    if (dist <= NEAR && !(goal !== to && dist > 1)) setState("idle");
+    // on an errand she runs the whole way
+    else setState(to !== target || dist > RUN_FROM || (state === "run" && dist > RUN_FROM / 3) ? "run" : "walk");
 
     if (state !== "idle") {
       facing = dx > 0 ? "right" : "left";
@@ -330,6 +416,9 @@
       frameTime += dt;
       while (frameTime >= 1 / a.fps) { frameTime -= 1 / a.fps; frame = (frame + 1) % a.frames; }
       show(`${state}_${facing}`, frame, a.frames);
+    } else if (to !== target) {
+      // just arrived somewhere on an errand
+      show("poses", 0, POSES.length);
     } else {
       // Stand for a while, then strike a random pose, then go back to standing.
       idleFor += dt;
