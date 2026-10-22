@@ -2,7 +2,12 @@
   const SITE = window.SITE || {};
   const PROJECTS = window.PROJECTS || [];
   const EXTRAS = window.EXTRAS || [];
-  const ICONS = [...PROJECTS, ...EXTRAS];
+  const ALL_ICONS = [...PROJECTS, ...EXTRAS];
+  // Portfolios ("personalities") switched from the middle of the menu bar; an item without `mode` belongs to the first one.
+  const MODES = window.MODES && window.MODES.length ? window.MODES : [{ id: "main", title: "Portfolio" }];
+  const modeOf = (p) => p.mode || MODES[0].id;
+  let mode = MODES.some((m) => "#" + m.id === location.hash) ? location.hash.slice(1) : MODES[0].id;
+  let ICONS = [];
   const STORE_KEY = "desktop-positions-v4";
   const PLACEHOLDER_COLORS = ["#f2603c", "#3fa7f5", "#9b5de5", "#f9b52b", "#2ec4b6", "#ef476f", "#118ab2", "#8d99ae"];
 
@@ -140,6 +145,16 @@
   // ---------- desktop icons ----------
   function renderIcons() {
     desktop.innerHTML = "";
+    ICONS = ALL_ICONS.filter((p) => modeOf(p) === mode);
+    if (!ICONS.length) {
+      const m = MODES.find((x) => x.id === mode);
+      const empty = Object.assign(document.createElement("div"), { className: "desktop-empty" });
+      empty.append(
+        Object.assign(document.createElement("strong"), { textContent: m.title }),
+        Object.assign(document.createElement("span"), { textContent: m.empty || "coming soon" }),
+      );
+      desktop.appendChild(empty);
+    }
     ICONS.forEach((p, i) => {
       const el = document.createElement("button");
       el.className = "icon";
@@ -419,7 +434,7 @@
   function openAll() {
     const body = document.createElement("div");
     body.className = "finder";
-    PROJECTS.forEach((p) => {
+    PROJECTS.filter((p) => modeOf(p) === mode).forEach((p) => {
       const b = document.createElement("button");
       const t = document.createElement("div");
       t.className = "thumb";
@@ -457,6 +472,30 @@
   addEventListener("resize", () => {
     if (isMobile() !== lastMobile) { lastMobile = isMobile(); renderIcons(); }
   });
+
+  // ---------- personality switcher ----------
+  const switcher = document.getElementById("switcher");
+  function renderSwitcher() {
+    switcher.innerHTML = "";
+    for (const m of MODES) {
+      const b = Object.assign(document.createElement("button"), { type: "button", textContent: m.title });
+      b.setAttribute("aria-pressed", m.id === mode);
+      b.addEventListener("click", () => setMode(m.id));
+      switcher.appendChild(b);
+    }
+  }
+  function setMode(id) {
+    if (id === mode) return;
+    mode = id;
+    // windows belong to the portfolio they were opened from
+    for (const k of [...openWindows.keys()]) closeWindow(k);
+    history.replaceState(null, "", id === MODES[0].id ? location.pathname + location.search : "#" + id);
+    renderSwitcher();
+    renderIcons();
+  }
+  if (MODES.length > 1) renderSwitcher();
+  else switcher.remove();
+  addEventListener("hashchange", () => setMode(MODES.some((m) => "#" + m.id === location.hash) ? location.hash.slice(1) : MODES[0].id));
 
   renderIcons();
 

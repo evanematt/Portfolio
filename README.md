@@ -14,6 +14,8 @@ projects/<project-id>/02.mp4    ← videos work too, next to a 02.jpg poster
 
 Then edit `projects.js`: set your name, email and Instagram, and give each project an `id` (same as its folder name), `title`, `year`, `tags`, `description` and the list of `images`. Optional `lip` is the height (in %, from the top of folder.png) of the folder's front panel edge; hover previews rise out from behind it.
 
+`window.MODES` lists the portfolio tabs in the middle of the menu bar. A project with `mode: "<tab id>"` shows under that tab; without one it belongs to the first tab. A tab with nothing in it shows its title and `empty` text. The open tab is kept in the URL (`#product`), so each portfolio has its own link.
+
 Any missing image shows as a coloured placeholder, so the site works before every file is in.
 
 ## Run locally
