@@ -110,6 +110,14 @@ window.PROJECTS = [
 ];
 
 // Extra desktop icons that aren't projects: a YouTube video that opens in a small player window.
+// The tabs in the middle of the menu bar. Give a project `mode: "<id>"` to put it under another tab
+// (no `mode` = the first tab); an empty tab shows its title and `empty` text instead of icons.
+window.MODES = [
+  { id: "visual", title: "Visual" },
+  { id: "product", title: "Product", empty: "product design portfolio, coming soon" },
+  { id: "lab", title: "Lab", empty: "coming soon" },
+];
+
 window.EXTRAS = [
   { id: "adhd", title: "for ADHD", youtube: "rk84ndVMwbY", icon: "assets/adhd-icon.jpg", speed: 3 },
 ];

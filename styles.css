@@ -55,6 +55,43 @@ a { color: inherit; text-decoration: none; }
 .menubar-item { opacity: .85; }
 .menubar-item:hover { opacity: 1; }
 .menubar-clock { font-variant-numeric: tabular-nums; }
+/* personality switcher: a segmented control in the middle of the menu bar */
+.switcher {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .1);
+}
+.switcher button {
+  height: 20px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  opacity: .75;
+  transition: background .15s, color .15s, opacity .15s;
+}
+.switcher button:hover { opacity: 1; }
+.switcher button[aria-pressed="true"] { background: #e8e8e8; color: #141416; opacity: 1; }
+.desktop-empty {
+  position: absolute;
+  inset: 0 0 90px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  text-align: center;
+  color: rgba(255, 255, 255, .55);
+  font-size: 14px;
+  pointer-events: none;
+}
+.desktop-empty strong { font-size: 22px; font-weight: 600; color: rgba(255, 255, 255, .85); }
 
 /* ---------- desktop icons ---------- */
 .desktop {
@@ -374,6 +411,9 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 640px) {
   .menubar { padding: 0 12px; }
   .menubar-item[data-open="arrange"], .menubar-right .menubar-item { display: none; }
+  /* room for the switcher in the middle */
+  #siteName, .menubar-clock { display: none; }
+  .switcher button { padding: 0 10px; }
   .icon { width: 84px; }
   .folder { width: 66px; height: 56px; }
   .label { font-size: 9.5px; max-width: 84px; }
