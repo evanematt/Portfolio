@@ -330,7 +330,43 @@
     frame.title = p.title;
     frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
     frame.allowFullscreen = true;
-    createWindow("v:" + p.id, p.title, frame, { video: true });
+    const w = createWindow("v:" + p.id, p.title, frame, { video: true });
+    makeResizable(w);
+  }
+
+  // Video windows: drag the bottom-right corner to resize (the video keeps 16:9); the green light toggles big / small.
+  function makeResizable(w) {
+    if (w.querySelector(".resize")) return;
+    const handle = Object.assign(document.createElement("div"), { className: "resize" });
+    w.appendChild(handle);
+    const setWidth = (width) => {
+      w.style.width = clamp(width, 280, innerWidth - 16) + "px";
+      w.style.maxHeight = "none";
+      w.dataset.moved = "1";
+    };
+    let start = null;
+    handle.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      handle.setPointerCapture(e.pointerId);
+      w.classList.add("resizing");
+      start = { x: e.clientX, y: e.clientY, width: w.offsetWidth };
+    });
+    handle.addEventListener("pointermove", (e) => {
+      if (!start) return;
+      // follow whichever way the corner moved further, as 16:9
+      setWidth(start.width + Math.max(e.clientX - start.x, ((e.clientY - start.y) * 16) / 9));
+    });
+    const end = () => { start = null; w.classList.remove("resizing"); };
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+    w.querySelector(".light.max").addEventListener("click", () => {
+      const big = w.offsetWidth < innerWidth * 0.7;
+      const width = big ? Math.min(innerWidth - 32, ((innerHeight - 80) * 16) / 9) : 560;
+      setWidth(width);
+      const r = w.getBoundingClientRect();
+      w.style.left = clamp((innerWidth - r.width) / 2, 8, innerWidth - r.width - 8) + "px";
+      w.style.top = clamp((innerHeight - r.height) / 2, 36, innerHeight - r.height - 8) + "px";
+    });
   }
 
   function openAbout() {
