@@ -150,7 +150,11 @@
       el.style.top = pos.y + "%";
 
       const thumb = document.createElement("div");
-      if (p.youtube) {
+      if (p.icon) {
+        // an app shortcut: the icon art on a rounded tile
+        thumb.className = "app-icon";
+        thumb.append(Object.assign(document.createElement("img"), { alt: "", draggable: false, src: p.icon }));
+      } else if (p.youtube) {
         // a video file: the YouTube thumbnail with a play badge
         thumb.className = "video-file";
         thumb.append(Object.assign(document.createElement("img"), { alt: "", draggable: false, src: `https://i.ytimg.com/vi/${p.youtube}/mqdefault.jpg` }));
