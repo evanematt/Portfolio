@@ -1,6 +1,8 @@
 (() => {
   const SITE = window.SITE || {};
   const PROJECTS = window.PROJECTS || [];
+  const EXTRAS = window.EXTRAS || [];
+  const ICONS = [...PROJECTS, ...EXTRAS];
   const STORE_KEY = "desktop-positions-v4";
   const PLACEHOLDER_COLORS = ["#f2603c", "#3fa7f5", "#9b5de5", "#f9b52b", "#2ec4b6", "#ef476f", "#118ab2", "#8d99ae"];
 
@@ -130,7 +132,7 @@
   function positionFor(p, i) {
     if (!isMobile() && saved[p.id]) return saved[p.id];
     if (!isMobile() && p.x != null && p.y != null) return { x: p.x, y: p.y };
-    return autoPosition(i, PROJECTS.length);
+    return autoPosition(i, ICONS.length);
   }
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -138,7 +140,7 @@
   // ---------- desktop icons ----------
   function renderIcons() {
     desktop.innerHTML = "";
-    PROJECTS.forEach((p, i) => {
+    ICONS.forEach((p, i) => {
       const el = document.createElement("button");
       el.className = "icon";
       el.style.animationDelay = `${i * 35}ms`;
@@ -148,6 +150,11 @@
       el.style.top = pos.y + "%";
 
       const thumb = document.createElement("div");
+      if (p.youtube) {
+        // a video file: the YouTube thumbnail with a play badge
+        thumb.className = "video-file";
+        thumb.append(Object.assign(document.createElement("img"), { alt: "", draggable: false, src: `https://i.ytimg.com/vi/${p.youtube}/mqdefault.jpg` }));
+      } else {
       thumb.className = "folder";
       // back of the folder, the previews, then a copy of the art clipped to the front panel,
       // so the previews look like they come out of the folder rather than from behind it
@@ -156,13 +163,14 @@
       front.src = path(p, p.folder || "folder.png");
       if (p.lip != null) thumb.style.setProperty("--lip", p.lip + "%");
       thumb.append(Object.assign(image(p, [path(p, p.folder || "folder.png"), ...coverSources(p)]), { className: "art" }), peeks(p), front);
+      }
       const label = document.createElement("span");
       label.className = "label";
       label.textContent = p.title;
       el.append(thumb, label);
 
       makeIconDraggable(el, p);
-      el.addEventListener("keydown", (e) => { if (e.key === "Enter") openProject(p); });
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter") openItem(p); });
       desktop.appendChild(el);
     });
   }
@@ -193,7 +201,7 @@
       if (!start) return;
       el.classList.remove("dragging");
       if (start.moved) persist();
-      else openProject(p);
+      else openItem(p);
       start = null;
     };
     el.addEventListener("pointerup", end);
@@ -308,6 +316,21 @@
     files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
     body.append(meta, h, d, gallery);
     createWindow("p:" + p.id, p.title, body);
+  }
+
+  function openItem(p) {
+    if (p.youtube) openVideo(p);
+    else openProject(p);
+  }
+
+  function openVideo(p) {
+    const frame = document.createElement("iframe");
+    frame.className = "player";
+    frame.src = `https://www.youtube-nocookie.com/embed/${p.youtube}?autoplay=1&rel=0&playsinline=1`;
+    frame.title = p.title;
+    frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+    frame.allowFullscreen = true;
+    createWindow("v:" + p.id, p.title, frame, { small: true });
   }
 
   function openAbout() {
