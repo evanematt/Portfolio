@@ -351,4 +351,22 @@
   });
 
   renderIcons();
+
+  // ---------- updates ----------
+  // When a new version is deployed (the ?v= in index.html changes), reload so it shows without a manual refresh.
+  const version = (html) => (/app\.js\?v=([^"]+)/.exec(html) || [])[1];
+  const current = version(document.documentElement.outerHTML);
+  let lastCheck = 0;
+  async function checkForUpdate() {
+    if (!current || document.hidden || Date.now() - lastCheck < 10000) return;
+    lastCheck = Date.now();
+    try {
+      const res = await fetch(location.pathname, { cache: "no-store" });
+      const latest = version(await res.text());
+      if (latest && latest !== current) location.reload();
+    } catch (e) { /* offline */ }
+  }
+  document.addEventListener("visibilitychange", checkForUpdate);
+  addEventListener("focus", checkForUpdate);
+  setInterval(checkForUpdate, 30000);
 })();

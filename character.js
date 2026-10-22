@@ -9,6 +9,8 @@
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const DIR = "assets/character/";
+  // sprites carry the same ?v= as this script, so a new version's sprites aren't served from the old cache
+  const VER = new URL(document.currentScript.src).search;
   const FW = 176, FH = 256, GROUND = 250;
   // Full size on most laptop screens, a bit smaller on short ones.
   const SCALE = innerHeight >= 760 ? 1 : 0.75;
@@ -86,7 +88,7 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png" + VER;
 
   const desk = document.createElement("div");
   desk.className = "buddy-desk";
@@ -94,7 +96,7 @@
   desk.style.width = DESK.w * SCALE + "px";
   desk.style.height = DESK.h * SCALE + "px";
   desk.style.bottom = -(DESK.h - DESK.floor) * SCALE + "px";
-  desk.style.backgroundImage = `url(${DIR}desk.png)`;
+  desk.style.backgroundImage = `url(${DIR}desk.png${VER})`;
   desk.style.backgroundSize = `${DESK.w * SCALE * 4}px ${DESK.h * SCALE}px`;
   let deskLeft = null;     // x of the desk frame's left edge, null while there's no desk
   // everything she brings in is gone after a reload; clear what earlier versions saved
@@ -118,7 +120,7 @@
   llama.style.bottom = -(LLAMA.h - LLAMA.floor) * SCALE + "px";
   const bird = sprite("buddy-bird", BIRD.w, BIRD.h);
   function frameOf(node, sheet, i, frames, w, h) {
-    node.style.backgroundImage = `url(${DIR}${sheet}.png)`;
+    node.style.backgroundImage = `url(${DIR}${sheet}.png${VER})`;
     node.style.backgroundSize = `${w * SCALE * frames}px ${h * SCALE}px`;
     node.style.backgroundPosition = `${-i * w * SCALE}px 0`;
   }
@@ -184,7 +186,7 @@
   const dock = document.getElementById("dock");
 
   const wardrobe = sprite("buddy-wardrobe", WARD.w, WARD.h);
-  wardrobe.style.backgroundImage = `url(${DIR}wardrobe.png)`;
+  wardrobe.style.backgroundImage = `url(${DIR}wardrobe.png${VER})`;
   wardrobe.style.backgroundSize = `${WARD.w * SCALE * 2}px ${WARD.h * SCALE}px`;
   // ward: where the wardrobe's feet are (y), how fast it's falling, which frame, how far it's tipped
   let ward = null;
@@ -284,7 +286,7 @@
   let last = performance.now();
 
   function show(sheet, i, frames) {
-    el.style.backgroundImage = `url(${DIR}${sheet}.png)`;
+    el.style.backgroundImage = `url(${DIR}${sheet}.png${VER})`;
     el.style.backgroundSize = `${FW * SCALE * frames}px ${FH * SCALE}px`;
     el.style.backgroundPosition = `${-i * FW * SCALE}px 0`;
   }
