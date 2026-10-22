@@ -206,7 +206,6 @@
 
   // ---------- windows ----------
   let z = 100;
-  let cascade = 0;
   const openWindows = new Map();
 
   function createWindow(key, title, body, { small = false } = {}) {
@@ -235,14 +234,16 @@
     w.querySelector(".wbody").appendChild(body);
     windowsEl.appendChild(w);
 
+    // open centred on the screen, but leave room above for the walking character to sit on it (set by character.js)
     const width = w.offsetWidth;
-    const offset = (cascade++ % 6) * 26;
-    w.style.left = clamp((innerWidth - width) / 2 + offset - 60, 8, innerWidth - width - 8) + "px";
-    // leave room above the window for the walking character to stand on it (set by character.js)
+    w.style.left = clamp((innerWidth - width) / 2, 8, innerWidth - width - 8) + "px";
     const headroom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--buddy-headroom")) || 0;
-    const top = clamp(Math.max(innerHeight * 0.1, headroom) + offset, 36, innerHeight - 160);
-    w.style.top = top + "px";
-    if (headroom) w.style.maxHeight = `min(78vh, 760px, ${innerHeight - top - 16}px)`;
+    const minTop = Math.max(36, headroom);
+    if (headroom) w.style.maxHeight = `min(78vh, 760px, ${innerHeight - minTop - 16}px)`;
+    // keep it centred while images load and it grows, until it's dragged
+    const centre = () => { if (!w.dataset.moved) w.style.top = Math.max(minTop, (innerHeight - w.offsetHeight) / 2) + "px"; };
+    centre();
+    new ResizeObserver(centre).observe(w);
 
     w.addEventListener("pointerdown", () => { w.style.zIndex = ++z; });
     w.querySelector(".close").addEventListener("click", () => closeWindow(key));
@@ -271,6 +272,7 @@
       if (!start) return;
       w.style.left = clamp(start.left + e.clientX - start.x, 40 - w.offsetWidth, innerWidth - 40) + "px";
       w.style.top = clamp(start.top + e.clientY - start.y, 28, innerHeight - 40) + "px";
+      w.dataset.moved = "1";
     });
     const end = () => { start = null; };
     bar.addEventListener("pointerup", end);
