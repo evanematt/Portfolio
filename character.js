@@ -36,6 +36,10 @@
   // sit.png: 4 frames sitting on an edge, legs swinging; the seat is on row 144
   const SEAT = 144;
   const LEGS = (GROUND - SEAT) * SCALE;  // how far her feet hang below the edge she sits on
+  // Dragged up under the menu bar she gets squashed (down to SQUASH of her height above the seat) and cross.
+  // sit_angry.png: sit.png's legs under fall.png's angry top half, 4 frames (hands on hips / fist up, kicking).
+  const HEAD = 10;         // top of her hair in the sitting frames
+  const SQUASH = 0.45;
   // fall.png: 0 startled in mid-air, 1 falling, 2 landed on her bottom, 3 getting up, 4–5 shaking her fist
   const FALL = { freeze: 1.0, land: 0.7, up: 0.35, angry: 2.6, gravity: 2600 * SCALE };
   const CURSES = ["#@!%", "&*!#", "%$#@!", "!!!"];
@@ -88,7 +92,7 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png" + VER;
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits", "sit_angry"]) new Image().src = DIR + f + ".png" + VER;
 
   const desk = document.createElement("div");
   desk.className = "buddy-desk";
@@ -291,6 +295,8 @@
   let mockups = null;      // the Mockups window we last reacted to
   // sitting: when the window is dragged she tips the other way and wobbles back (a damped spring)
   let tilt = 0, tiltVel = 0, winVX = 0, lastLeft = null;
+  let squash = 1, cross = 0; // sitting: how squashed she is, and how long she's been cross about it
+  let seatWin = null;        // the window carrying her drag limit (data-buddy-min)
   let last = performance.now();
 
   function show(sheet, i, frames) {
@@ -483,11 +489,22 @@
       }
     }
 
-    if (!on || hop) { tilt = 0; tiltVel = 0; lastLeft = null; }
+    if (!on || hop) { tilt = 0; tiltVel = 0; lastLeft = null; unsquash(); }
     // windows cover her, except the one she is sitting on or has just cleared the top of
     el.style.zIndex = on || (hop && hop.to && y <= hop.to.getBoundingClientRect().top + 4) ? "7000" : "";
-    el.style.transform = `translate(${Math.round(x - HALF)}px, ${Math.round(y - TALL)}px)` + (tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
+    const shake = cross ? Math.sin(cross * 70) * 1.5 * SCALE : 0;
+    el.style.transform = `translate(${Math.round(x - HALF + shake)}px, ${Math.round(y - TALL)}px)` + (tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "") +
+      (squash < 1 ? ` scale(${(1 + (1 - squash) * 0.5).toFixed(3)}, ${squash.toFixed(3)})` : "");
     requestAnimationFrame(tick);
+  }
+
+  function unsquash() {
+    if (seatWin) { delete seatWin.dataset.buddyMin; seatWin = null; }
+    if (squash === 1 && !cross) return;
+    squash = 1;
+    cross = 0;
+    bubble.classList.remove("show");
+    bubble.style.zIndex = "";
   }
 
   // Sitting on the window's top edge with her legs over the front, riding along if it's dragged.
@@ -495,6 +512,21 @@
     const r = on.getBoundingClientRect();
     x = r.left + relX;
     y = r.top + LEGS;
+    // pressed up against the menu bar: squash her (around the seat) and let her yell about it
+    const need = (SEAT - HEAD) * SCALE;
+    on.dataset.buddyMin = Math.ceil(MENUBAR + need * SQUASH);
+    seatWin = on;
+    squash = Math.max(SQUASH, Math.min(1, (r.top - MENUBAR) / need));
+    if (squash < 0.95 && typeof dress !== "number") {
+      cross += dt;
+      bubble.textContent = CURSES[Math.floor(cross * 1.5) % CURSES.length];
+      bubble.classList.add("show");
+      bubble.style.zIndex = "7001";
+      bubble.style.transform = `translate(${Math.round(x + HALF * 0.55)}px, ${Math.round(r.top - need * squash * 0.6)}px)`;
+      // in the hoodie there's no angry top half, so she just kicks
+      return show(dress === "done" ? "sit_hoodie" : "sit_angry", Math.floor(cross * 6) % 4, 4);
+    }
+    if (cross) { cross = 0; bubble.classList.remove("show"); bubble.style.zIndex = ""; }
     // how fast the window is moving sideways, smoothed
     if (lastLeft !== null && dt > 0) winVX += ((r.left - lastLeft) / dt - winVX) * Math.min(1, dt * 12);
     lastLeft = r.left;

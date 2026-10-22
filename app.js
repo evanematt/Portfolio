@@ -286,7 +286,8 @@
     bar.addEventListener("pointermove", (e) => {
       if (!start) return;
       w.style.left = clamp(start.left + e.clientX - start.x, 40 - w.offsetWidth, innerWidth - 40) + "px";
-      w.style.top = clamp(start.top + e.clientY - start.y, 28, innerHeight - 40) + "px";
+      // with the character sitting on it, it only goes as high as she can be squashed (set by character.js)
+      w.style.top = clamp(start.top + e.clientY - start.y, Math.max(28, +w.dataset.buddyMin || 0), innerHeight - 40) + "px";
       w.dataset.moved = "1";
     });
     const end = () => { start = null; };
