@@ -328,7 +328,8 @@
     for (const w of document.querySelectorAll(".window:not(.closing)")) {
       if (!best || +w.style.zIndex > +best.style.zIndex) best = w;
     }
-    if (!best) return null;
+    // video players aren't for sitting on
+    if (!best || best.classList.contains("video")) return null;
     const r = best.getBoundingClientRect();
     return r.top - MENUBAR >= SEAT * SCALE * 0.9 && r.width > FW * SCALE ? best : null;
   }

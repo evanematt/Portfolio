@@ -216,14 +216,14 @@
   let z = 100;
   const openWindows = new Map();
 
-  function createWindow(key, title, body, { small = false } = {}) {
+  function createWindow(key, title, body, { small = false, video = false } = {}) {
     if (openWindows.has(key)) {
       const w = openWindows.get(key);
       w.style.zIndex = ++z;
       return w;
     }
     const w = document.createElement("section");
-    w.className = "window" + (small ? " small" : "");
+    w.className = "window" + (small ? " small" : "") + (video ? " video" : "");
     w.dataset.key = key;
     w.setAttribute("role", "dialog");
     w.setAttribute("aria-label", title);
@@ -330,7 +330,7 @@
     frame.title = p.title;
     frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
     frame.allowFullscreen = true;
-    createWindow("v:" + p.id, p.title, frame, { small: true });
+    createWindow("v:" + p.id, p.title, frame, { video: true });
   }
 
   function openAbout() {
