@@ -43,12 +43,12 @@
   const MERCH = "p:character";
   const DRESS = [0.8, 0.5, 0.6, 0.6, 0.7];
   // When the Mockups window opens she runs to the bottom-left corner, pulls a desk in from off screen
-  // and sits at it for a while; the desk stays (remembered in localStorage).
+  // and sits at it for a while; the desk stays until the page is reloaded.
   // desk.png: 4 frames of 184×212, floor on row 208, desk's left edge at x 8: 0 empty, 1–3 her at the PC.
   // pull_left.png: 4 frames facing left, hands reaching to x 10, feet on row 250.
   const MOCKUPS = "p:mockups";
   // When Llama & Mavka opens, its llama gallops across the bottom chasing its bird, lies down on the right
-  // and falls asleep with the bird perched on its back; the pair stays there (remembered in localStorage).
+  // and falls asleep with the bird perched on its back; the pair stays there until the page is reloaded.
   // llama_run.png: 6 frames of 220×200; llama_sleep.png: 0 standing, 1 kneeling, 2 resting, 3 curled up asleep,
   // drawn from x 6; feet on row 196 in both. bird.png: 6 frames of 80×64: 0–3 flying, 4 perched, 5 dozing,
   // perched feet on row 61. Asleep, the llama's back is on row 130 around x 60.
@@ -97,13 +97,14 @@
   desk.style.backgroundImage = `url(${DIR}desk.png)`;
   desk.style.backgroundSize = `${DESK.w * SCALE * 4}px ${DESK.h * SCALE}px`;
   let deskLeft = null;     // x of the desk frame's left edge, null while there's no desk
+  // everything she brings in is gone after a reload; clear what earlier versions saved
+  try { for (const k of ["buddy-desk", "buddy-llama", "buddy-wardrobe"]) localStorage.removeItem(k); } catch (e) { /* storage blocked */ }
   function placeDesk(left, i = 0) {
     deskLeft = left;
     desk.style.transform = `translateX(${Math.round(left)}px)`;
     desk.style.backgroundPosition = `${-i * DESK.w * SCALE}px 0`;
     if (!desk.isConnected) document.body.insertBefore(desk, el);
   }
-  try { if (localStorage.getItem("buddy-desk")) placeDesk(DESK.left); } catch (e) { /* storage blocked */ }
 
   function sprite(cls, w, h) {
     const d = document.createElement("div");
@@ -124,7 +125,6 @@
   // phase: run → settle → asleep; null until Llama & Mavka first opens
   let scene = null;
   let llamaWin = null;
-  try { if (localStorage.getItem("buddy-llama")) scene = { phase: "asleep", t: 0, bt: 0 }; } catch (e) { /* storage blocked */ }
 
   function tickScene(dt) {
     const w = document.querySelector(`.window[data-key="${LLAMA_KEY}"]:not(.closing)`);
@@ -166,7 +166,6 @@
       bi = p < 1 ? Math.floor(scene.t * 10) % 4 : 4;
       if (p >= 1 && i === 3) {
         scene = { phase: "asleep", t: 0, bt: 0 };
-        try { localStorage.setItem("buddy-llama", "1"); } catch (err) { /* storage blocked */ }
       }
     }
     if (scene.phase === "asleep") {
@@ -191,7 +190,6 @@
   let ward = null;
   let look = null;         // Lookbook opened: { phase: go | change, t }
   let lookWin = null;
-  try { if (localStorage.getItem("buddy-wardrobe")) ward = { y: innerHeight, vy: 0, landed: true, i: 0, tilt: 0, squash: 0 }; } catch (e) { /* storage blocked */ }
 
   // Just left of the dock, clear of the desk.
   function wardX() {
@@ -211,7 +209,7 @@
         ward.squash = 0.18;
         // one small bounce, then it stays put
         if (ward.vy > 900 * SCALE) ward.vy = -ward.vy * 0.2;
-        else { ward.vy = 0; ward.landed = true; try { localStorage.setItem("buddy-wardrobe", "1"); } catch (e) { /* storage blocked */ } }
+        else { ward.vy = 0; ward.landed = true; }
       }
     } else ward.y = innerHeight;
     ward.squash = Math.max(0, ward.squash - dt);
@@ -555,7 +553,6 @@
       facing = "left";
       show("pull_left", Math.floor(task.t * 6) % 4, 4);
       if (p >= 1) {
-        try { localStorage.setItem("buddy-desk", "1"); } catch (err) { /* storage blocked */ }
         task = { phase: "work", t: 0 };
       } else return;
     }
