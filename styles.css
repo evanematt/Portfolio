@@ -51,7 +51,7 @@ a { color: inherit; text-decoration: none; }
   z-index: 5000;
 }
 .menubar-left, .menubar-right { display: flex; align-items: center; gap: 16px; }
-.menubar-logo { font-size: 14px; }
+.menubar-logo { height: 17px; width: auto; display: block; }
 .menubar-item { opacity: .85; }
 .menubar-item:hover { opacity: 1; }
 .menubar-clock { font-variant-numeric: tabular-nums; }
