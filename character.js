@@ -476,6 +476,8 @@
     }
 
     if (!on || hop) { tilt = 0; tiltVel = 0; lastLeft = null; }
+    // windows cover her, except the one she is sitting on or has just cleared the top of
+    el.style.zIndex = on || (hop && hop.to && y <= hop.to.getBoundingClientRect().top + 4) ? "7000" : "";
     el.style.transform = `translate(${Math.round(x - HALF)}px, ${Math.round(y - TALL)}px)` + (tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
     requestAnimationFrame(tick);
   }
