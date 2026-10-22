@@ -315,7 +315,7 @@ a { color: inherit; text-decoration: none; }
   transform-origin: 50% 56.25%;
 }
 /* the desk she pulls into the bottom-left corner for the Mockups project */
-.buddy-desk {
+.buddy-desk, .buddy-wardrobe {
   position: fixed;
   left: 0;
   z-index: 3990; /* in front of windows, just behind her */
@@ -324,6 +324,7 @@ a { color: inherit; text-decoration: none; }
   image-rendering: pixelated;
   will-change: transform;
 }
+.buddy-wardrobe { top: 0; transform-origin: 50% 100%; }
 /* the llama and bird from Llama & Mavka that run across and fall asleep on the right */
 .buddy-llama, .buddy-bird {
   position: fixed;
