@@ -55,6 +55,21 @@
   const LLAMA_KEY = "p:llama-mavka";
   const LLAMA = { w: 220, h: 200, floor: 196, body: 141, right: 24, speed: 380, settle: [0.6, 0.5, 0.8], backY: 130, backX: 60 };
   const BIRD = { w: 80, h: 64, feet: 61, land: 1.4 };
+  // When Lookbook opens, a wardrobe drops from the top of the screen next to the dock; she runs to it and
+  // tries on the three outfits from the project's films, ducking inside between them. The wardrobe stays.
+  // wardrobe.png: 2 frames of 300×280 (doors closed, doors open), floor on row 276, body 208 px wide.
+  // outfits.png: 6 frames of her front-on, two poses per outfit: graphic hoodie, striped sweater, windbreaker.
+  const LOOK_KEY = "p:lookbook";
+  const WARD = { w: 300, h: 280, floor: 276, body: 208, gap: 30, gravity: 3200 };
+  const CHANGE = (() => {
+    // [seconds, doors open?, shaking?, her sprite or null while she's inside]
+    const steps = [[0.45, 1, 0, ["poses", 0, 12]]];
+    for (let k = 0; k < 3; k++) {
+      steps.push([1.2, 0, 1, null], [1.0, 1, 0, ["outfits", 2 * k, 6]], [1.4, 1, 0, ["outfits", 2 * k + 1, 6]]);
+    }
+    steps.push([1.2, 0, 1, null], [0.5, 1, 0, ["poses", 0, 12]], [1.2, 1, 0, ["poses", 4, 12]], [0.3, 0, 0, ["poses", 0, 12]]);
+    return steps;
+  })();
   const DESK = { w: 184, h: 212, floor: 208, grip: 176, hands: 10, chair: 130, left: 4, pull: 2.4, work: 5 };
 
   const el = document.createElement("div");
@@ -71,7 +86,7 @@
   document.documentElement.style.setProperty("--buddy-headroom", MENUBAR + SEAT * SCALE + 10 + "px");
 
   // Warm the cache so switching animations doesn't flash.
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird"]) new Image().src = DIR + f + ".png";
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "sit", "fall", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png";
 
   const desk = document.createElement("div");
   desk.className = "buddy-desk";
@@ -168,6 +183,88 @@
   }
 
   const dock = document.getElementById("dock");
+
+  const wardrobe = sprite("buddy-wardrobe", WARD.w, WARD.h);
+  wardrobe.style.backgroundImage = `url(${DIR}wardrobe.png)`;
+  wardrobe.style.backgroundSize = `${WARD.w * SCALE * 2}px ${WARD.h * SCALE}px`;
+  // ward: where the wardrobe's feet are (y), how fast it's falling, which frame, how far it's tipped
+  let ward = null;
+  let look = null;         // Lookbook opened: { phase: go | change, t }
+  let lookWin = null;
+  try { if (localStorage.getItem("buddy-wardrobe")) ward = { y: innerHeight, vy: 0, landed: true, i: 0, tilt: 0, squash: 0 }; } catch (e) { /* storage blocked */ }
+
+  // Just left of the dock, clear of the desk.
+  function wardX() {
+    const half = (WARD.body / 2) * SCALE;
+    const deskRight = DESK.left + DESK.w * SCALE;
+    return Math.max(deskRight + 20 + half, dock.getBoundingClientRect().left - WARD.gap * SCALE - half);
+  }
+
+  function tickWardrobe(dt) {
+    if (!ward) return;
+    if (!wardrobe.isConnected) document.body.insertBefore(wardrobe, el);
+    if (!ward.landed) {
+      ward.vy += WARD.gravity * SCALE * dt;
+      ward.y += ward.vy * dt;
+      if (ward.y >= innerHeight) {
+        ward.y = innerHeight;
+        ward.squash = 0.18;
+        // one small bounce, then it stays put
+        if (ward.vy > 900 * SCALE) ward.vy = -ward.vy * 0.2;
+        else { ward.vy = 0; ward.landed = true; try { localStorage.setItem("buddy-wardrobe", "1"); } catch (e) { /* storage blocked */ } }
+      }
+    } else ward.y = innerHeight;
+    ward.squash = Math.max(0, ward.squash - dt);
+    const sq = ward.squash > 0 ? 1 - 0.5 * ward.squash : 1;
+    wardrobe.style.transform = `translate(${Math.round(wardX() - (WARD.w / 2) * SCALE)}px, ${Math.round(ward.y - WARD.floor * SCALE)}px)` +
+      (ward.tilt ? ` rotate(${ward.tilt.toFixed(2)}deg)` : "") + (sq !== 1 ? ` scale(${(2 - sq).toFixed(3)}, ${sq.toFixed(3)})` : "");
+    wardrobe.style.backgroundPosition = `${-ward.i * WARD.w * SCALE}px 0`;
+  }
+
+  // A Lookbook window that just opened drops the wardrobe (if it isn't there yet) and sends her to it.
+  function startLook() {
+    const w = document.querySelector(`.window[data-key="${LOOK_KEY}"]:not(.closing)`);
+    if (w === lookWin) return false;
+    lookWin = w;
+    if (!w || look || task) return false;
+    if (!ward) ward = { y: -40 * SCALE, vy: 0, landed: false, i: 0, tilt: 0, squash: 0 };
+    look = { phase: "go", t: 0 };
+    if (on) {
+      on = null;
+      dress = null;
+      jump(clearOfDock(x), floorY(), null, 40 * SCALE);
+      return true;
+    }
+    return false;
+  }
+
+  function tickLook(dt) {
+    look.t += dt;
+    if (look.phase === "go") {
+      walk(dt, wardX());
+      if (hop || state !== "idle" || !ward.landed) return;
+      look = { phase: "change", t: 0 };
+    }
+    // step through the timeline: doors open and shut, the wardrobe rattles while she changes inside
+    let t = look.t, k = 0;
+    while (k < CHANGE.length && t >= CHANGE[k][0]) t -= CHANGE[k++][0];
+    if (k >= CHANGE.length) {
+      ward.i = 0;
+      ward.tilt = 0;
+      el.style.visibility = "";
+      look = null;
+      setState("idle");
+      return;
+    }
+    const [, open, shake, her] = CHANGE[k];
+    ward.i = open;
+    ward.tilt = shake ? 2.5 * Math.sin(look.t * 38) : 0;
+    x = wardX();
+    y = floorY();
+    el.style.visibility = her ? "" : "hidden";
+    if (her) show(her[0], her[1], her[2]);
+  }
+
   const floorY = () => innerHeight;
 
   let x = innerWidth * 0.82, y = floorY();
@@ -250,7 +347,7 @@
   addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") target = e.clientX; }, { passive: true });
   document.documentElement.addEventListener("mouseleave", () => { target = x; });
   // A click while she's standing on the floor makes her jump on the spot.
-  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on && !fall && !task) jump(x, y, null, 70 * SCALE); }, { passive: true });
+  addEventListener("pointerdown", () => { if (state === "idle" && !hop && !on && !fall && !task && !look) jump(x, y, null, 70 * SCALE); }, { passive: true });
 
   // Cartoon fall: she hangs in the air for a moment, drops, lands on her bottom,
   // gets up and shakes her fist with a little speech bubble.
@@ -342,15 +439,18 @@
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     tickScene(dt);
+    tickWardrobe(dt);
 
     if (fall) {
       tickFall(dt);
     } else if (hop) {
       tickHop(dt);
-    } else if (startTask()) {
+    } else if (startTask() || startLook()) {
       tickHop(0);
     } else if (task) {
       tickTask(dt);
+    } else if (look) {
+      tickLook(dt);
     } else {
       // once she's on a window she stays on it until it closes
       const stillOpen = on && on.isConnected && !on.classList.contains("closing");
@@ -420,7 +520,7 @@
     const w = document.querySelector(`.window[data-key="${MOCKUPS}"]:not(.closing)`);
     if (w === mockups) return false;
     mockups = w;
-    if (!w || task) return false;
+    if (!w || task || look) return false;
     task = { phase: "go", t: 0 };
     if (on) {
       on = null;
