@@ -330,12 +330,41 @@
   function openVideo(p) {
     const frame = document.createElement("iframe");
     frame.className = "player";
-    frame.src = `https://www.youtube-nocookie.com/embed/${p.youtube}?autoplay=1&rel=0&playsinline=1`;
+    const api = p.speed ? `&enablejsapi=1&origin=${encodeURIComponent(location.origin)}` : "";
+    frame.src = `https://www.youtube-nocookie.com/embed/${p.youtube}?autoplay=1&rel=0&playsinline=1${api}`;
     frame.title = p.title;
     frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
     frame.allowFullscreen = true;
     const w = createWindow("v:" + p.id, p.title, frame, { video: true });
     makeResizable(w);
+    if (p.speed) playAtSpeed(frame, p.speed);
+  }
+
+  // Ask the YouTube player (via its postMessage API) to play at `speed`, or the fastest rate it offers below that.
+  function playAtSpeed(frame, speed) {
+    const send = (func, args = []) => frame.contentWindow && frame.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+    let rates = null, done = false;
+    const onMessage = (e) => {
+      if (!frame.isConnected) return removeEventListener("message", onMessage);
+      if (e.source !== frame.contentWindow || typeof e.data !== "string") return;
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      const info = msg.info || {};
+      if (Array.isArray(info.availablePlaybackRates)) rates = info.availablePlaybackRates;
+      const target = rates ? Math.max(...rates.filter((r) => r <= speed)) : speed;
+      if (info.playbackRate === target) { done = true; return removeEventListener("message", onMessage); }
+      if (msg.event === "onReady" || info.playerState === 1 || rates) send("setPlaybackRate", [target]);
+    };
+    addEventListener("message", onMessage);
+    // stop steering after a while so a speed picked by hand isn't overridden
+    setTimeout(() => { done = true; removeEventListener("message", onMessage); }, 15000);
+    // the player only starts talking once it has been told someone is listening
+    const hello = () => frame.contentWindow && frame.contentWindow.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*");
+    frame.addEventListener("load", () => {
+      hello();
+      let tries = 0;
+      const t = setInterval(() => { if (done || !frame.isConnected || ++tries > 20) return clearInterval(t); hello(); send("setPlaybackRate", [speed]); }, 500);
+    });
   }
 
   // Video windows: drag the bottom-right corner to resize (the video keeps 16:9); the green light toggles big / small.
