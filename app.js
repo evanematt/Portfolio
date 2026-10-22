@@ -235,13 +235,28 @@
     windowsEl.appendChild(w);
 
     // open centred on the screen, but leave room above for the walking character to sit on it (set by character.js)
-    const width = w.offsetWidth;
-    w.style.left = clamp((innerWidth - width) / 2, 8, innerWidth - width - 8) + "px";
+    let width = w.offsetWidth;
+    let left = (innerWidth - width) / 2;
+    // a window with a scene of its own (desk, wardrobe, llama) moves aside, to whichever side has more room
+    const scene = window.buddyScene && window.buddyScene(key);
+    if (scene && left < scene.right + 24 && left + width > scene.left - 24) {
+      const right = scene.left - 24 - 8 < innerWidth - 8 - (scene.right + 24);
+      const from = right ? scene.right + 24 : 8;
+      const to = right ? innerWidth - 8 : scene.left - 24;
+      if (to - from >= 420) {
+        width = Math.min(width, to - from);
+        w.style.width = width + "px";
+        left = clamp(left, from, to - width);
+      }
+    }
+    w.style.left = clamp(left, 8, innerWidth - width - 8) + "px";
     const headroom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--buddy-headroom")) || 0;
     const minTop = Math.max(36, headroom);
-    if (headroom) w.style.maxHeight = `min(78vh, 760px, ${innerHeight - minTop - 16}px)`;
+    // on desktop keep clear of the dock and sit a little above centre
+    const lift = headroom ? 40 : 0;
+    if (headroom) w.style.maxHeight = `min(78vh, 760px, ${innerHeight - minTop - 90}px)`;
     // keep it centred while images load and it grows, until it's dragged
-    const centre = () => { if (!w.dataset.moved) w.style.top = Math.max(minTop, (innerHeight - w.offsetHeight) / 2) + "px"; };
+    const centre = () => { if (!w.dataset.moved) w.style.top = Math.max(minTop, (innerHeight - w.offsetHeight) / 2 - lift) + "px"; };
     centre();
     new ResizeObserver(centre).observe(w);
 

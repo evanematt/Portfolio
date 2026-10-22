@@ -200,6 +200,14 @@
     return Math.max(deskRight + 20 + half, dock.getBoundingClientRect().left - WARD.gap * SCALE - half);
   }
 
+  // Where each window's scene plays, so app.js can open that window beside it rather than over it.
+  window.buddyScene = (key) => {
+    if (key === MOCKUPS) return { left: 0, right: DESK.left + DESK.w * SCALE };
+    if (key === LOOK_KEY) return { left: wardX() - (WARD.w / 2) * SCALE, right: wardX() + (WARD.w / 2) * SCALE };
+    if (key === LLAMA_KEY) return { left: innerWidth - LLAMA.right - LLAMA.body * SCALE, right: innerWidth };
+    return null;
+  };
+
   function tickWardrobe(dt) {
     if (!ward) return;
     if (!wardrobe.isConnected) document.body.insertBefore(wardrobe, el);
