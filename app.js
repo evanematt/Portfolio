@@ -499,6 +499,9 @@
 
   renderIcons();
 
+  // shared with mobile.js, which draws the phone home screen from the same projects
+  window.PORTFOLIO = { image, media, coverSources, modeOf, playAtSpeed };
+
   // ---------- updates ----------
   // When a new version is deployed (the ?v= in index.html changes), reload so it shows without a manual refresh.
   const version = (html) => (/app\.js\?v=([^"]+)/.exec(html) || [])[1];
