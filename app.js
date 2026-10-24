@@ -322,6 +322,15 @@
     bar.addEventListener("pointercancel", end);
   }
 
+  // a project's headed paragraphs (PROJECTS[].sections), shown under its description
+  function sections(p) {
+    return (p.sections || []).map((sec) => {
+      const div = Object.assign(document.createElement("div"), { className: "wsection" });
+      div.append(Object.assign(document.createElement("h3"), { textContent: sec.title }), Object.assign(document.createElement("p"), { textContent: sec.text }));
+      return div;
+    });
+  }
+
   function openProject(p) {
     const body = document.createElement("div");
     const meta = document.createElement("div");
@@ -333,7 +342,7 @@
     gallery.className = "gallery";
     const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
     files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
-    body.append(meta, h, d, gallery);
+    body.append(meta, h, d, ...sections(p), gallery);
     createWindow("p:" + p.id, p.title, body);
   }
 

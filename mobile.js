@@ -231,7 +231,12 @@
     const gallery = el("div", "gallery");
     const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
     files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
-    body.append(head, el("p", "app-desc", { textContent: p.description || "" }), gallery);
+    const sections = (p.sections || []).map((sec) => {
+      const div = el("section", "app-section");
+      div.append(el("h2", "", { textContent: sec.title }), el("p", "", { textContent: sec.text }));
+      return div;
+    });
+    body.append(head, el("p", "app-desc", { textContent: p.description || "" }), ...sections, gallery);
     const s = openSheet(from, { title: p.title }, body);
     // phone-buddy.js plays the project's character scene along the bottom
     document.dispatchEvent(new CustomEvent("phone:project", { detail: { sheet: s, id: p.id } }));
