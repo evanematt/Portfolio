@@ -387,6 +387,27 @@ a { color: inherit; text-decoration: none; }
 .wmeta { display: flex; gap: 10px; font-size: 12px; color: var(--win-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
 .wbody h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.01em; }
 .wbody p { margin: 0 0 18px; font-size: 14px; line-height: 1.55; color: #333; }
+/* a project window reads like a case study: title and lead, then numbered sections between the pictures */
+.wbody .case { padding: 10px 14px 18px; }
+.case .wmeta { margin-bottom: 10px; }
+.case h2 { margin: 0 0 14px; font-size: 34px; font-weight: 700; line-height: 1.05; letter-spacing: -.025em; }
+.case .case-lead { max-width: 34em; margin: 0 0 28px; font-size: 18px; line-height: 1.45; letter-spacing: -.01em; color: #222; }
+.case-text {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 32em);
+  gap: 0 24px;
+  margin: 44px 0 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, .1);
+}
+.case-text h3 { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.6; letter-spacing: .01em; color: #111; }
+.case-text h3 span { display: block; margin-bottom: 2px; font-size: 11px; font-weight: 500; letter-spacing: .08em; color: var(--win-muted); font-variant-numeric: tabular-nums; }
+.wbody .case-text p { margin: 0; font-size: 17px; line-height: 1.55; letter-spacing: -.005em; color: #222; }
+/* a narrow window stacks the label over the text */
+@media (max-width: 760px) {
+  .case-text { grid-template-columns: 1fr; gap: 6px; }
+  .case-text h3 span { display: inline; margin-right: 8px; }
+}
 
 .gallery { display: grid; gap: 10px; }
 .gallery img, .gallery video {
@@ -686,7 +707,12 @@ a { color: inherit; text-decoration: none; }
   .app-head-icon { flex: none; width: 76px; height: 76px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 .5px rgba(255, 255, 255, .15); }
   .app-head-icon img, .app-head-icon .placeholder { width: 100%; height: 100%; object-fit: cover; display: block; }
   .app-head-meta { display: block; margin-top: 4px; font-size: 13px; color: rgba(255, 255, 255, .5); }
-  .app-desc { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, .8); }
+  .app-desc { margin: 0 0 22px; font-size: 17px; line-height: 1.5; color: rgba(255, 255, 255, .8); }
+  /* numbered sections between the pictures */
+  .app-section { margin: 36px 0 18px; }
+  .app-section h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .5); }
+  .app-section h2 span { margin-right: 8px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .app-section p { margin: 0; font-size: 19px; line-height: 1.45; letter-spacing: -.01em; color: rgba(255, 255, 255, .9); }
   .sheet .gallery { gap: 10px; }
   .sheet .gallery img, .sheet .gallery video { width: 100%; max-height: none; border-radius: 14px; }
 

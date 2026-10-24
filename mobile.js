@@ -6,7 +6,7 @@
   const PROJECTS = window.PROJECTS || [];
   const EXTRAS = window.EXTRAS || [];
   const MODES = window.MODES && window.MODES.length ? window.MODES : [{ id: "main", title: "Portfolio" }];
-  const { image, media, coverSources, modeOf, playAtSpeed } = window.PORTFOLIO;
+  const { image, media, coverSources, modeOf, playAtSpeed, chapters } = window.PORTFOLIO;
   const phoneQuery = matchMedia("(max-width: 640px)");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const VERSION = (/mobile\.js\?v=([^"&]+)/.exec(document.documentElement.outerHTML) || [])[1] || "";
@@ -228,10 +228,21 @@
     const info = el("div");
     info.append(el("h1", "", { textContent: p.title }), el("span", "app-head-meta", { textContent: [p.tags, p.year].filter(Boolean).join(" · ") }));
     head.append(icon, info);
-    const gallery = el("div", "gallery");
-    const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
-    files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
-    body.append(head, el("p", "app-desc", { textContent: p.description || "" }), gallery);
+    body.append(head, el("p", "app-desc", { textContent: p.description || "" }));
+    // its sections between the pictures, as chapters of a case study
+    for (const c of chapters(p)) {
+      if (c.sec) {
+        const text = el("section", "app-section");
+        const label = el("h2");
+        label.append(el("span", "", { textContent: String(c.n).padStart(2, "0") }), c.sec.title);
+        text.append(label, el("p", "", { textContent: c.sec.text }));
+        body.appendChild(text);
+      }
+      if (!c.files.length) continue;
+      const gallery = el("div", "gallery");
+      for (const [f, i] of c.files) gallery.appendChild(media(p, f, i));
+      body.appendChild(gallery);
+    }
     const s = openSheet(from, { title: p.title }, body);
     // phone-buddy.js plays the project's character scene along the bottom
     document.dispatchEvent(new CustomEvent("phone:project", { detail: { sheet: s, id: p.id } }));
