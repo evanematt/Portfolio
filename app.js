@@ -322,18 +322,47 @@
     bar.addEventListener("pointercancel", end);
   }
 
+  // A project's page as chapters: the first picture on its own under the description, then each of its
+  // sections (PROJECTS[].sections) followed by its share of the remaining pictures, in order.
+  function chapters(p) {
+    const files = (p.images && p.images.length ? p.images : [p.cover || "cover.jpg"]).map((f, i) => [f, i]);
+    const secs = p.sections || [];
+    if (!secs.length) return [{ files }];
+    const out = [{ files: files.slice(0, 1) }];
+    const rest = files.slice(1);
+    let at = 0;
+    secs.forEach((sec, k) => {
+      const n = Math.ceil((rest.length - at) / (secs.length - k));
+      out.push({ sec, n: k + 1, files: rest.slice(at, at + n) });
+      at += n;
+    });
+    return out;
+  }
+
   function openProject(p) {
     const body = document.createElement("div");
+    body.className = "case";
     const meta = document.createElement("div");
     meta.className = "wmeta";
     for (const t of [p.year, p.tags]) if (t) meta.appendChild(Object.assign(document.createElement("span"), { textContent: t }));
     const h = Object.assign(document.createElement("h2"), { textContent: p.title });
-    const d = Object.assign(document.createElement("p"), { textContent: p.description || "" });
-    const gallery = document.createElement("div");
-    gallery.className = "gallery";
-    const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
-    files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
-    body.append(meta, h, d, gallery);
+    const d = Object.assign(document.createElement("p"), { className: "case-lead", textContent: p.description || "" });
+    body.append(meta, h, d);
+    for (const c of chapters(p)) {
+      if (c.sec) {
+        const text = document.createElement("div");
+        text.className = "case-text";
+        const label = document.createElement("h3");
+        label.append(Object.assign(document.createElement("span"), { textContent: String(c.n).padStart(2, "0") }), c.sec.title);
+        text.append(label, Object.assign(document.createElement("p"), { textContent: c.sec.text }));
+        body.appendChild(text);
+      }
+      if (!c.files.length) continue;
+      const gallery = document.createElement("div");
+      gallery.className = "gallery";
+      for (const [f, i] of c.files) gallery.appendChild(media(p, f, i));
+      body.appendChild(gallery);
+    }
     createWindow("p:" + p.id, p.title, body);
   }
 
@@ -500,7 +529,7 @@
   renderIcons();
 
   // shared with mobile.js, which draws the phone home screen from the same projects
-  window.PORTFOLIO = { image, media, coverSources, modeOf, playAtSpeed };
+  window.PORTFOLIO = { image, media, coverSources, modeOf, playAtSpeed, chapters };
 
   // ---------- updates ----------
   // When a new version is deployed (the ?v= in index.html changes), reload so it shows without a manual refresh.
