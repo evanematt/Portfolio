@@ -722,7 +722,7 @@ a { color: inherit; text-decoration: none; }
   .app-video h1 { font-size: 22px; }
   .app-video.with-game { justify-content: flex-start; }
 
-  /* the block puzzle under the for ADHD video (blockblast.js) */
+  /* the block puzzle in for ADHD on the phone (blockblast.js) */
   .bb { --gap: 3px; display: flex; flex-direction: column; gap: 14px; margin-top: 6px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   .bb-head { display: flex; align-items: center; gap: 12px; }
   .bb-label { flex: 1; font-size: 12px; font-weight: 600; letter-spacing: .06em; line-height: 1.35; text-transform: uppercase; color: rgba(255, 255, 255, .5); }
@@ -736,7 +736,7 @@ a { color: inherit; text-decoration: none; }
     grid-template-columns: repeat(8, 1fr);
     gap: var(--gap);
     width: 100%;
-    max-width: min(420px, calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 300px));
+    max-width: min(420px, calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 330px));
     min-width: 260px;
     align-self: center;
     aspect-ratio: 1;
