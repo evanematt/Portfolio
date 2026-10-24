@@ -1,6 +1,6 @@
 // A small Block Blast-style puzzle for the phone: drag the three pieces onto an 8×8 board,
 // fill a whole row or column to clear it, and keep going until nothing fits.
-// mobile.js mounts it under an extra's video when the extra has `game: "blocks"`.
+// mobile.js opens it instead of an extra's video when the extra has `game: "blocks"`.
 window.BlockBlast = (() => {
   const N = 8;
   const COLORS = ["#ff4d6d", "#ff9f1c", "#ffd60a", "#4cd964", "#2ec4f1", "#3a7bff", "#a259ff"];
@@ -28,7 +28,7 @@ window.BlockBlast = (() => {
     const restart = el("button", "bb-restart", { type: "button", textContent: "Restart" });
     const side = el("div", "bb-head-side");
     side.append(restart, bestEl);
-    head.append(el("span", "bb-label", { textContent: "Can't sit through it? Play while it runs" }), scoreEl, side);
+    head.append(el("span", "bb-label", { textContent: "Drag the blocks, clear the lines" }), scoreEl, side);
     const board = el("div", "bb-board");
     const cells = [];
     for (let i = 0; i < N * N; i++) cells.push(board.appendChild(el("span", "bb-cell")));

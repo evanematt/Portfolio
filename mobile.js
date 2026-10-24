@@ -250,15 +250,17 @@
 
   function openVideo(p, from) {
     const body = el("div", "app-video");
+    // `game: "blocks"` opens a block puzzle (blockblast.js) instead of the video
+    if (p.game === "blocks" && window.BlockBlast) {
+      body.classList.add("with-game");
+      body.append(el("h1", "", { textContent: p.title }));
+      window.BlockBlast(body);
+      return openSheet(from, { title: p.title, theme: "video" }, body);
+    }
     const frame = el("iframe", "player", { title: p.title, allowFullscreen: true, allow: "autoplay; encrypted-media; picture-in-picture; fullscreen" });
     const api = p.speed ? `&enablejsapi=1&origin=${encodeURIComponent(location.origin)}` : "";
     frame.src = `https://www.youtube-nocookie.com/embed/${p.youtube}?autoplay=1&rel=0&playsinline=1${api}`;
     body.append(frame, el("h1", "", { textContent: p.title }));
-    // `game: "blocks"` puts a block puzzle under the video (blockblast.js)
-    if (p.game === "blocks" && window.BlockBlast) {
-      body.classList.add("with-game");
-      window.BlockBlast(body);
-    }
     openSheet(from, { title: p.title, theme: "video" }, body);
     if (p.speed) playAtSpeed(frame, p.speed);
   }
