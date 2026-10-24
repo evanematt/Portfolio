@@ -185,18 +185,84 @@
     sheet.appendChild(layer);
     stage = { sheet, layer, id, t: 0, her: character(layer), scene: null };
     stage.her.x = -HALF;
+    const scroll = sheet.querySelector(".sheet-scroll");
+    // At the end of the page she takes questions about the project (PROJECTS[].qa), as on the desktop:
+    // they wait beside her, and she types her answer into a speech bubble.
+    const project = (window.PROJECTS || []).find((p) => p.id === id && p.qa && p.qa.length);
+    if (project) {
+      const qa = document.createElement("div");
+      qa.className = "pb-qa";
+      sheet.classList.add("has-qa");
+      sheet.appendChild(qa);
+      Object.assign(stage, { qa, project, ask: null, talkFor: 0 });
+      renderQA(stage);
+    }
     // duck down while the page is scrolling, peek back up once it stops
     let rest;
-    sheet.querySelector(".sheet-scroll").addEventListener("scroll", () => {
+    const atEnd = () => scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 40;
+    scroll.addEventListener("scroll", () => {
       layer.classList.add("away");
+      if (stage && stage.layer === layer) stage.talk = false;
       clearTimeout(rest);
-      rest = setTimeout(() => layer.classList.remove("away"), 650);
+      rest = setTimeout(() => {
+        layer.classList.remove("away");
+        if (stage && stage.layer === layer) stage.talk = atEnd();
+      }, 650);
     }, { passive: true });
+    // a page too short to scroll is at its end already
+    setTimeout(() => { if (stage && stage.layer === layer && !layer.classList.contains("away")) stage.talk = atEnd(); }, 1000);
   });
+
+  function renderQA(s) {
+    s.qa.textContent = "";
+    if (s.ask) {
+      const say = document.createElement("p");
+      say.className = "say";
+      say.textContent = s.ask.a.slice(0, Math.floor(s.ask.n));
+      s.qa.appendChild(say);
+    }
+    for (const item of s.project.qa) {
+      if (s.ask && item.a === s.ask.a) continue;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = item.q;
+      b.addEventListener("click", () => {
+        s.ask = { a: item.a, n: 0 };
+        renderQA(s);
+      });
+      s.qa.appendChild(b);
+    }
+  }
+
+  // the questions show once she's been standing at the end of the page for a moment, beside her head
+  function tickQA(s, dt, W, H) {
+    const her = s.her;
+    // at the Mockups desk she's drawn into the desk sprite, on its chair
+    const x = s.qaX ?? her.x;
+    // in Lookbook she finishes trying on outfits first
+    const busy = s.id === "lookbook" && s.phase !== "wait";
+    const ready = s.talk && !busy && !her.hop && !her.state && (s.qaX != null || her.node.style.visibility !== "hidden");
+    s.talkFor = ready ? s.talkFor + dt : 0;
+    const show = s.talkFor > 0.5;
+    s.qa.classList.toggle("show", show);
+    if (!show) return;
+    if (s.ask && s.ask.n < s.ask.a.length) {
+      s.ask.n = Math.min(s.ask.a.length, s.ask.n + dt * 45);
+      s.qa.querySelector(".say").textContent = s.ask.a.slice(0, Math.floor(s.ask.n));
+    }
+    s.qa.style.left = Math.round(Math.min(W - 200, x + HALF * 0.55)) + "px";
+    s.qa.style.bottom = Math.round(H - her.y + (GROUND - 70) * S) + "px";
+  }
 
   // her wandering about the bottom when the project has no scene of its own
   function stroll(s, dt, W, lo = HALF + 6, hi = W - HALF - 6) {
     const her = s.her;
+    // taking questions: over to the left, leaving room for them beside her
+    if (s.talk && s.qa) {
+      if (!her.walk(dt, lo)) return;
+      s.goal = null; s.wait = 2;
+      return her.loiter(dt);
+    }
     if (s.goal == null && s.wait == null) s.goal = lo + (hi - lo) * 0.25;
     if (s.goal != null) {
       if (her.walk(dt, s.goal)) { s.goal = null; s.wait = 4 + Math.random() * 5; her.idle = 0; her.pose = "stand"; }
@@ -234,6 +300,7 @@
       }
       // at the PC: she's drawn into the desk sprite, clicking and typing
       her.node.style.visibility = "hidden";
+      s.qaX = DESK.left + 130 * S;
       place(s.desk, DESK.left, top);
       frame(s.desk, "desk", [1, 2, 1, 3][Math.floor(s.t * 2.5) % 4], 4, DESK.w, DESK.h);
     },
@@ -312,12 +379,15 @@
       let open = 0, shake = 0;
       if (s.phase === "wait") {
         stroll(s, dt, W, HALF + 6, cx - (WARD.w / 2) * S - HALF);
-        if (w.landed && (s.next = (s.next ?? 1.5) - dt) <= 0 && !her.state) s.phase = "go";
+        if (w.landed && (s.next = (s.next ?? 1.5) - dt) <= 0 && !her.state && !s.talk) s.phase = "go";
       } else if (s.phase === "go") {
-        if (her.walk(dt, cx, true)) { s.phase = "change"; s.t = 0; }
+        if (s.talk && s.qa) s.phase = "wait";
+        else if (her.walk(dt, cx, true)) { s.phase = "change"; s.t = 0; }
       } else {
         let t = s.t, k = 0;
         while (k < CHANGE.length && t >= CHANGE[k][0]) t -= CHANGE[k++][0];
+        // reached the end of the page: she steps straight out to take questions
+        if (s.talk && s.qa) k = CHANGE.length;
         if (k >= CHANGE.length) {
           // step back out to the left and loiter until the next try-on
           her.node.style.visibility = "";
@@ -361,11 +431,13 @@
     s.t += dt;
     const W = s.layer.clientWidth, H = s.layer.clientHeight;
     s.her.y = H;
-    if (s.her.hopping(dt)) return s.her.draw();
-    const scene = SCENES[s.id];
-    if (scene) scene(s, dt, W, H);
-    else stroll(s, dt, W);
+    if (!s.her.hopping(dt)) {
+      const scene = SCENES[s.id];
+      if (scene) scene(s, dt, W, H);
+      else stroll(s, dt, W);
+    }
     s.her.draw();
+    if (s.qa) tickQA(s, dt, W, H);
   }
 
   // tap her and she jumps
