@@ -12,12 +12,11 @@
 
   const DIR = "assets/character/";
   const VER = new URL(document.currentScript.src).search;
-  // character.js's sheets at 40%: she's about 70×100 px
-  const S = 0.4;
-  const FW = 176, FH = 256, GROUND = 250, SEAT = 144;
+  // character.js's sheets at 60%: she's about 105×155 px
+  const S = 0.6;
+  const FW = 176, FH = 256, GROUND = 250;
   const HALF = (FW * S) / 2;
-  const LEGS = (GROUND - SEAT) * S;
-  const WALK = 60, RUN = 170;  // px per second
+  const WALK = 90, RUN = 250;  // px per second
   const POSES = ["stand", "arms_crossed", "hands_on_hips", "hand_in_pocket", "wave", "back_hands_on_hips",
     "hand_on_head", "shrug", "arms_crossed_2", "hand_on_hip", "crouch_point", "peace"];
   const IDLE_POSES = ["arms_crossed", "hands_on_hips", "wave", "hand_on_head", "shrug", "hand_on_hip", "peace"];
@@ -35,7 +34,7 @@
     return steps;
   })();
 
-  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "hoodie_on", "sit_hoodie", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png" + VER;
+  for (const f of ["walk_right", "walk_left", "run_right", "run_left", "jump_right", "jump_left", "poses", "hoodie_on", "desk", "pull_left", "llama_run", "llama_sleep", "bird", "wardrobe", "outfits"]) new Image().src = DIR + f + ".png" + VER;
 
   function sprite(parent, cls, w, h) {
     const d = document.createElement("div");
@@ -123,26 +122,35 @@
     return pill && x >= pill.left + 6 && x <= pill.right - 6 ? pill.top + 1 : d.top + 1;
   }
 
-  // a spot where she'd stand clear of the open page's icons, so she never hides one
+  // a spot where she'd stand clear of the open page's icons, so she never hides one;
+  // on a screen too short for that, the spot where she covers the least of them
   function clearSpot(lo, hi) {
     const page = pages().children[Math.round(pages().scrollLeft / Math.max(1, pages().clientWidth))];
-    const boxes = page ? [...page.querySelectorAll(".app, .widget")].map((n) => n.getBoundingClientRect()) : [];
-    // nor stand down beside the switcher overlapping its buttons
-    if (pager) boxes.push(pager.getBoundingClientRect());
-    const free = [];
+    const boxes = page ? [...page.querySelectorAll(".app, .widget")].map((n) => [n.getBoundingClientRect(), 1]) : [];
+    // standing down beside the switcher over its buttons counts for less
+    if (pager) boxes.push([pager.getBoundingClientRect(), 0.3]);
+    const spots = [];
     for (let k = 0; k <= 30; k++) {
       const x = lo + ((hi - lo) * k) / 30;
       const y = floorAt(x), top = y - (GROUND - 12) * S;
-      if (!boxes.some((r) => r.left < x + HALF * 0.6 && r.right > x - HALF * 0.6 && r.top < y && r.bottom > top)) free.push(x);
+      let cover = 0;
+      for (const [r, w] of boxes) {
+        const ox = Math.min(r.right, x + HALF * 0.6) - Math.max(r.left, x - HALF * 0.6);
+        const oy = Math.min(r.bottom, y) - Math.max(r.top, top);
+        if (ox > 0 && oy > 0) cover += ox * oy * w;
+      }
+      spots.push([cover, x]);
     }
-    return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+    const least = Math.min(...spots.map(([c]) => c));
+    const best = spots.filter(([c]) => c <= least + 1);
+    return best[Math.floor(Math.random() * best.length)][1];
   }
   const pages = () => phone.querySelector(".phone-pages");
 
   function tickHome(dt) {
     const d = dock.getBoundingClientRect();
     const lo = d.left + HALF * 0.7, hi = d.right - HALF * 0.7;
-    if (!homePlaced) { home.x = clearSpot(lo, hi) ?? (lo + hi) / 2; home.y = floorAt(home.x); homePlaced = true; }
+    if (!homePlaced) { home.x = clearSpot(lo, hi); home.y = floorAt(home.x); homePlaced = true; }
     if (!home.hopping(dt)) {
       home.x = Math.min(hi, Math.max(lo, home.x));
       home.y = floorAt(home.x);
@@ -157,7 +165,7 @@
       } else {
         home.loiter(dt);
         if ((homeWait -= dt) <= 0) {
-          homeGoal = clearSpot(lo, hi) ?? home.x;
+          homeGoal = clearSpot(lo, hi);
           homeWait = 3;
           if (Math.abs(homeGoal - home.x) < 4) homeGoal = null;
         }
@@ -328,7 +336,7 @@
       frame(s.ward, "wardrobe", open, 2, WARD.w, WARD.h);
     },
 
-    // she walks in, pulls on the project's hoodie and sits on the bottom edge swinging her legs
+    // she walks in, pulls on the project's hoodie and stands there in it, tugging it straight now and then
     character(s, dt, W, H) {
       const her = s.her;
       if (!s.phase) s.phase = "go";
@@ -343,9 +351,7 @@
         if (i === DRESS.length - 1 && t >= DRESS[i]) { s.phase = "sit"; s.t = 0; }
         else return her.show("hoodie_on", i, DRESS.length);
       }
-      her.y = H + LEGS;
-      const swing = s.t % 5;
-      her.show("sit_hoodie", swing < 2 ? Math.floor(swing * 4) % 4 : 0, 4);
+      her.show("hoodie_on", s.t % 6 > 5.5 ? 3 : 4, DRESS.length);
     },
   };
 
