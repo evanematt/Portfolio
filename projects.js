@@ -162,5 +162,5 @@ window.MODES = [
 ];
 
 window.EXTRAS = [
-  { id: "adhd", title: "for ADHD", youtube: "rk84ndVMwbY", icon: "assets/adhd-icon.jpg", speed: 3 },
+  { id: "adhd", title: "for ADHD", youtube: "rk84ndVMwbY", icon: "assets/adhd-icon.jpg", speed: 3, game: "blocks" },
 ];
