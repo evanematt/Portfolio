@@ -717,6 +717,24 @@ a { color: inherit; text-decoration: none; }
     background: linear-gradient(transparent, rgba(0, 0, 0, .6));
   }
 
+  /* the pixel character (phone-buddy.js): on the page switcher at home, along the bottom of a project */
+  .pb-layer, .pb-stage { position: absolute; pointer-events: none; }
+  .pb-layer { inset: 0; z-index: 5; }
+  /* the home screen's icons stay in front of her, so she never covers one */
+  .phone-pages { position: relative; z-index: 6; }
+  .pb-stage {
+    left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    height: 120px;
+    transition: transform .25s ease-in, opacity .25s ease-in;
+  }
+  .pb-stage.away { transform: translateY(60%); opacity: 0; transition-timing-function: ease-out; }
+  .pb { position: absolute; left: 0; top: 0; background-repeat: no-repeat; image-rendering: pixelated; will-change: transform; }
+  .pb-ward { transform-origin: 50% 100%; }
+  .pb-her { z-index: 1; }
+  /* room under the gallery so its last picture scrolls clear of her */
+  .sheet.has-stage .sheet-scroll { padding-bottom: calc(env(safe-area-inset-bottom) + 120px); }
+
   @keyframes phone-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
 }
 

@@ -232,7 +232,9 @@
     const files = p.images && p.images.length ? p.images : [p.cover || "cover.jpg"];
     files.forEach((f, i) => gallery.appendChild(media(p, f, i)));
     body.append(head, el("p", "app-desc", { textContent: p.description || "" }), gallery);
-    openSheet(from, { title: p.title }, body);
+    const s = openSheet(from, { title: p.title }, body);
+    // phone-buddy.js plays the project's character scene along the bottom
+    document.dispatchEvent(new CustomEvent("phone:project", { detail: { sheet: s, id: p.id } }));
   }
 
   function openVideo(p, from) {
