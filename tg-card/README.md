@@ -23,3 +23,7 @@ Then visit http://localhost:8000.
 - The card faces are drawn on a canvas at runtime. The photo is embedded in the page as base64.
 
 Profile and project details come from The Gradient's public site.
+
+## Eva Mul
+
+A second card, for Eva Mul, Product Designer at The Gradient, is in [`eva/`](eva/). It is served at `/Portfolio/tg-card/eva/`.
